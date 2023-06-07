@@ -31,7 +31,6 @@ function uploadFile(fpath, key) {
         Bucket: awsSettings.DeploymentBucket,
         Key: key,
         Body: contents,
-        ACL: "public-read",
         ContentType: contentType
     };
     const upload = new S3.ManagedUpload({params: params});
