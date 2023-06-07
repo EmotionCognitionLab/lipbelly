@@ -41,7 +41,7 @@ function requestYesNo(msg) {
 
 const curVer = getCurVersionFromFile(versionFile);
 console.log(`Current version is ${curVer}`);
-gitTagVersion(versionFile, '', `Updating baseline/client version to ${curVer}`);
+gitTagVersion(versionFile, '', `Updating site version to ${curVer}`);
 
 requestYesNo('Push new version (and version tag) to remote repository? (Y/N):')
 .then(answer => {
