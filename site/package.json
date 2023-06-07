@@ -1,7 +1,7 @@
 {
   "scripts": {
     "test": "jest",
-    "test-all": "cd ../../common/logger && npm run test && cd ../../baseline/client && npm run test",
+    "test-all": "cd ../common/logger && npm run test && cd ../../site && npm run test",
     "start": "npx webpack serve --config webpack.dev.js",
     "start-external": "npm start -- --host 0.0.0.0",
     "build": "rm -rf dist/* && npx webpack --config webpack.prod.js",
