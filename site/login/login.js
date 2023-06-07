@@ -1,5 +1,6 @@
 import { getAuth, sendPhoneVerificationCode, updateUserAttributes, verifyPhone } from "auth/auth.js";
 import { validPhoneNumber } from "js/validate.js";
+import { showAssessment } from "../assessments/assessments";
 import './style.css';
 import ApiClient from "../../common/api/client";
 
@@ -29,7 +30,7 @@ function loginSuccess(session) {
         if (!phoneNumberVerified) {
             sendPhoneCode(session);    
         } else {
-            goToDailyTasks();
+            goToAssessments();
         }
     } else {
         showError(null, "There was a problem logging you in. Please try again.");
@@ -81,7 +82,7 @@ function phoneVerificationSuccess() {
     }
     document.getElementById(phoneVerificationFormId).classList.add('hidden');
     document.getElementById(phoneVerificationSuccessId).classList.remove('hidden');
-    document.getElementById('continueButton').addEventListener('click', goToDailyTasks);
+    document.getElementById('continueButton').addEventListener('click', goToAssessments);
     try {
         const client = new ApiClient(cachedSession);
         client.updateSelf({"phone_number_verified": true});
@@ -146,8 +147,18 @@ async function showPhoneConfirmForm() {
     });
 }
 
-function goToDailyTasks() {
-    window.location.href = '/daily-tasks/';
+function goToAssessments() {
+    const body = document.getElementsByTagName('body')[0];
+    const idToken = cachedSession.getIdToken().getJwtToken();
+    if (!idToken) {
+        showError(null, 'There was an error with your login');
+        return;
+    }
+
+    const payload = idToken.split('.')[1];
+    const tokenobj = JSON.parse(atob(payload));
+    const uid = tokenobj.sub;
+    showAssessment(uid, body);
 }
 
 function showError(err, msg) {
@@ -179,6 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(phoneVerificationSubmitButtonId).addEventListener('click', 
         () => { confirmPhoneVerificationCode(phoneVerificationSuccess, phoneVerificationFailure); }
     );
-    document.getElementById(skipPhoneVerificationId).addEventListener('click', goToDailyTasks);
+    document.getElementById(skipPhoneVerificationId).addEventListener('click', goToAssessments);
     handleLogin();
 });
