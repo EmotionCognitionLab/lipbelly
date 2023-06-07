@@ -1,4 +1,4 @@
-const awsSettings = require("../../../common/aws-settings.json");
+const awsSettings = require("../../common/aws-settings.json");
 const S3 = require("aws-sdk/clients/S3");
 const CF = require("aws-sdk/clients/CloudFront");
 const { readdirSync, readFileSync } =  require("fs");
