@@ -46,4 +46,8 @@ router.beforeEach(async (to) => {
   return true
 })
 
+window.mainAPI.onShowRestBreathing(() => {
+  router.push({path: '/rest'})
+})
+
 export default router

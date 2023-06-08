@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
@@ -44,6 +44,94 @@ async function createWindow() {
   return win
 }
 
+const EARNINGS_MENU_ID = 'earnings'
+const TRAINING_MENU_ID = 'training'
+const REST_BREATHING_MENU_ID = 'lab-visit'
+
+function buildMenuTemplate(window) {
+  const isMac = process.platform === 'darwin'
+
+  return [
+    // { role: 'appMenu' }
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    // { role: 'fileMenu' }
+    {
+      label: 'File',
+      submenu: [
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    // { role: 'editMenu' }
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'copy' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startSpeaking' },
+              { role: 'stopSpeaking' }
+            ]
+          }
+        ] : [ ])
+      ]
+    },
+    // { role: 'viewMenu' }
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+        { type: 'separator' },
+        { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
+        { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
+        { label: 'Lab Visit 4', id: REST_BREATHING_MENU_ID, click: () => window.webContents.send('show-rest-breathing'), visible: false, accelerator: 'CmdOrCtrl+Shift+R'}
+      ]
+    },
+    // { role: 'windowMenu' }
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ] : [
+          { role: 'close' }
+        ])
+      ]
+    },
+    // { role: 'helpMenu' }
+    ...(isMac ? [] : [{
+      label: 'Help',
+      submenu: [{role: 'about'}]
+    }])
+  ]
+}
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -76,6 +164,9 @@ app.on('ready', async () => {
   try {
     await emwave.startEmWave()
     mainWin = await createWindow()
+    const menuTmpl = buildMenuTemplate(mainWin)
+    const menu = Menu.buildFromTemplate(menuTmpl)
+    Menu.setApplicationMenu(menu)
     emwave.createClient(mainWin)
     mainWin.setFullScreen(true)
     mainWin.show()
