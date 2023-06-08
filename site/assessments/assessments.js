@@ -1,9 +1,9 @@
-const assessmentHost = 'https://usc.qualtrics.com';
-const assessmentUrls = [
-    '/jfe/form/poms',
-    '/jfe/form/dass',
-    '/jfe/form/ffmq',
-    '/jfe/form/demo'
+const assessmentPrefix = 'https://usc.qualtrics.com/jfe/form/';
+const assessmentIds = [
+    'SV_6KEekRf5INkySN0', // poms
+    'SV_a8zXrpFFCrCinXM', // dass
+    'SV_8cUUp0QSTornL3o', // ffmq
+    'SV_55vOlV4hE6nIJEi'  // demographics
 ];
 
 let curAssessment = 0;
@@ -18,7 +18,7 @@ export function showAssessment(userId, domNode) {
         domNode.firstChild.remove()
     }
     const iframe = document.createElement('iframe');
-    iframe.setAttribute('src', assessmentHost + assessmentUrls[curAssessment] + `?uid=${uid}`);
+    iframe.setAttribute('src', assessmentPrefix + assessmentIds[curAssessment] + `?uid=${uid}`);
     iframe.setAttribute('width', '100%');
     iframe.setAttribute('height', '600');
     iframeNode = iframe;
@@ -28,13 +28,13 @@ export function showAssessment(userId, domNode) {
 }
 
 function nextAssessment() {
-    if (curAssessment >= assessmentUrls.length - 1) {
+    if (curAssessment >= assessmentIds.length - 1) {
         showAllDone();
         return
     }
 
     curAssessment += 1;
-    const url = assessmentHost + assessmentUrls[curAssessment] + `?uid=${uid}`;
+    const url = assessmentPrefix + assessmentIds[curAssessment] + `?uid=${uid}`;
     iframeNode.src = url;
 }
 
