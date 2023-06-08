@@ -92,6 +92,15 @@ app.on('before-quit', () => {
   emwave.stopEmWave()
 })
 
+
+ipcMain.on('pulse-start', () => {
+  emwave.startPulseSensor()
+})
+
+ipcMain.on('pulse-stop', () => {
+  emwave.stopPulseSensor()
+})
+
 ipcMain.handle('show-login-window', () => {
   const auth = new AmazonCognitoIdentity.CognitoAuth(awsSettings)
   auth.useCodeGrantFlow();

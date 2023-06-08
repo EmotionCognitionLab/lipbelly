@@ -4,12 +4,14 @@ import { SessionStore } from '../session-store'
 import OauthRedirectComponent from '../components/OauthRedirectComponent.vue'
 import LoginComponent from '../components/LoginComponent.vue'
 import ConnectingComponent from '../components/ConnectingComponent.vue'
+import RestComponent from '../components/RestComponent.vue'
 
 const noAuthRoutes = ['/signin', '/login/index.html', '/setup', '/', '/index.html']
 
 const routes = [
   { path: '/login/index.html', component: OauthRedirectComponent }, // to match the oauth redirect we get
   { path: '/signin', component: LoginComponent, name: 'signin', props: true },
+  { path: '/rest', component: RestComponent },
   {
     path: '/',
     name: 'landing-page',
