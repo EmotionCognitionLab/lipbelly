@@ -9,6 +9,8 @@ import awsSettings from '../../common/aws-settings.json'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+import emwave from './emwave'
+
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
@@ -71,8 +73,23 @@ app.on('ready', async () => {
     }
   }
 
-  mainWin = await createWindow()
+  try {
+    await emwave.startEmWave()
+    mainWin = await createWindow()
+    emwave.createClient(mainWin)
+    mainWin.setFullScreen(true)
+    mainWin.show()
+    emwave.hideEmWave()
 
+  } catch (err) {
+    console.error('Error starting emwave', err);
+    mainWin.webContents.send('emwave-status', 'ConnectionFailure');
+  }
+
+})
+
+app.on('before-quit', () => {
+  emwave.stopEmWave()
 })
 
 ipcMain.handle('show-login-window', () => {

@@ -3,7 +3,7 @@ import { isAuthenticated, getAuth } from '../../../../common/auth/auth.js'
 import { SessionStore } from '../session-store'
 import OauthRedirectComponent from '../components/OauthRedirectComponent.vue'
 import LoginComponent from '../components/LoginComponent.vue'
-import HelloWorldComponent from '../components/HelloWorldComponent.vue'
+import ConnectingComponent from '../components/ConnectingComponent.vue'
 
 const noAuthRoutes = ['/signin', '/login/index.html', '/setup', '/', '/index.html']
 
@@ -13,7 +13,7 @@ const routes = [
   {
     path: '/',
     name: 'landing-page',
-    component: HelloWorldComponent,
+    component: ConnectingComponent,
   }
 ]
 
