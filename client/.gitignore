@@ -11,3 +11,11 @@ thumbs.db
 
 #Electron-builder output
 /dist_electron
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
