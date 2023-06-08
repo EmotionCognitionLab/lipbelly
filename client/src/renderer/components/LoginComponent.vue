@@ -13,7 +13,7 @@ const route = useRoute()
 
 const login = () => {
       if (route.query.postLoginPath !== undefined) {
-        window.sessionStorage.setItem('HeartBeam.postLoginPath', route.query.postLoginPath)
+        window.sessionStorage.setItem('MindBody.postLoginPath', route.query.postLoginPath)
       }
       window.mainAPI.showLoginWindow()
     }

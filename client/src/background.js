@@ -46,7 +46,7 @@ async function createWindow() {
 
 const EARNINGS_MENU_ID = 'earnings'
 const TRAINING_MENU_ID = 'training'
-const REST_BREATHING_MENU_ID = 'lab-visit'
+const REST_BREATHING_MENU_ID = 'rest-breathing'
 
 function buildMenuTemplate(window) {
   const isMac = process.platform === 'darwin'
@@ -106,7 +106,7 @@ function buildMenuTemplate(window) {
         { type: 'separator' },
         { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
         { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
-        { label: 'Lab Visit 4', id: REST_BREATHING_MENU_ID, click: () => window.webContents.send('show-rest-breathing'), visible: false, accelerator: 'CmdOrCtrl+Shift+R'}
+        { label: 'Rest Breathing', id: REST_BREATHING_MENU_ID, click: () => window.webContents.send('show-rest-breathing'), visible: false, accelerator: 'CmdOrCtrl+Shift+B'}
       ]
     },
     // { role: 'windowMenu' }
@@ -190,6 +190,11 @@ ipcMain.on('pulse-start', () => {
 
 ipcMain.on('pulse-stop', () => {
   emwave.stopPulseSensor()
+})
+
+ipcMain.handle('login-succeeded', () => {
+  // TODO remove this once we add breath-data
+  console.log('login successful');
 })
 
 ipcMain.handle('show-login-window', () => {

@@ -17,8 +17,8 @@
         SessionStore.session = session
         emit('login-succeeded')
         window.mainAPI.loginSucceeded(session)
-        const dest = window.sessionStorage.getItem('HeartBeam.postLoginPath') ? window.sessionStorage.getItem('HeartBeam.postLoginPath') : '/'
-        window.sessionStorage.removeItem('HeartBeam.postLoginPath')
+        const dest = window.sessionStorage.getItem('MindBody.postLoginPath') ? window.sessionStorage.getItem('MindBody.postLoginPath') : '/'
+        window.sessionStorage.removeItem('MindBody.postLoginPath')
         router.push({path: dest})
       },
       onFailure: err => console.error(err)
