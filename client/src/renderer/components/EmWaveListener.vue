@@ -18,7 +18,7 @@
    
 </template>
 <script setup>
-    import { ref, watch, computed } from '@vue/runtime-core'
+    import { ref, watch, computed } from 'vue'
     import { epToCoherence } from '../../coherence.js'
 
     const props = defineProps(['showIbi', 'showScore', 'condition'])

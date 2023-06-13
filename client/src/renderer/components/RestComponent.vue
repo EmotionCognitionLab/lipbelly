@@ -17,7 +17,7 @@
     </div>
 </template>
 <script setup>
-import { ref } from '@vue/runtime-core'
+import { ref } from 'vue'
 import EmWaveListener from './EmWaveListener.vue'
 import TimerComponent from './TimerComponent.vue'
 
