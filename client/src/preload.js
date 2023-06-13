@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('mainAPI', {
     stopPulseSensor: () => ipcRenderer.send('pulse-stop'),
     handleEmWaveIBIEvent: (callback) => ipcRenderer.on('emwave-ibi', callback),
     handleEmWaveStatusEvent: (callback) => ipcRenderer.on('emwave-status', callback),
-    onShowRestBreathing: (callback) => ipcRenderer.on('show-rest-breathing', callback)
+    onShowRestBreathing: (callback) => ipcRenderer.on('show-rest-breathing', callback),
+    uploadBreathData: async(session) => ipcRenderer.invoke('upload-breath-data', session)
 })

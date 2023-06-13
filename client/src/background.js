@@ -6,6 +6,9 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
 const AmazonCognitoIdentity = require('amazon-cognito-auth-js')
 import awsSettings from '../../common/aws-settings.json'
+import { breathDbPath, closeBreathDb } from './breath-data'
+import { SessionStore } from './session-store.js'
+import s3Utils from './s3utils.js'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -192,11 +195,6 @@ ipcMain.on('pulse-stop', () => {
   emwave.stopPulseSensor()
 })
 
-ipcMain.handle('login-succeeded', () => {
-  // TODO remove this once we add breath-data
-  console.log('login successful');
-})
-
 ipcMain.handle('show-login-window', () => {
   const auth = new AmazonCognitoIdentity.CognitoAuth(awsSettings)
   auth.useCodeGrantFlow();
@@ -229,6 +227,18 @@ ipcMain.handle('show-login-window', () => {
     // }
   })
 })
+
+ipcMain.handle('upload-breath-data', async (event, session) => {
+  closeBreathDb();
+  const breathDb = breathDbPath();
+  const fullSession = SessionStore.buildSession(session);
+  await s3Utils.uploadFile(fullSession, breathDb)
+  .catch(err => {
+    console.error(err);
+    return (err.message);
+  });
+  return null;
+});
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
