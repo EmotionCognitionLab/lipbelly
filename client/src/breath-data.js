@@ -13,6 +13,7 @@ import * as path from 'path'
 
 let db;
 let insertSegmentStmt, insertRestSegmentStmt, findRegimeStmt, insertRegimeStmt, regimeByIdStmt;
+let insertKeyValueStmt, getKeyValueStmt;
 
 function breathDbPath() {
    return path.join(breathDbDir(), 'MindBody.sqlite');
@@ -227,6 +228,16 @@ function checkVersion() {
     }
 }
 
+function setKeyValue(key, value) {
+    insertKeyValueStmt.run(key, value);
+}
+
+function getKeyValue(key) {
+    const res = getKeyValueStmt.run(key);
+    if (!res) return null;
+    return res.value;
+}
+
 // import this module into itself so that we can mock
 // certain calls in test
 // https://stackoverflow.com/questions/51269431/jest-mock-inner-function
@@ -250,7 +261,6 @@ async function initBreathDb(serializedSession) {
         // lost all their data :-(
         // either way, we can let sqlite create the database
         // if necessary
-        console.log(`breath db path: ${testable.breathDbPath()}`)
         db = new Database(testable.breathDbPath());
         const createRegimeTableStmt = db.prepare('CREATE TABLE IF NOT EXISTS regimes(id INTEGER PRIMARY KEY, duration_ms INTEGER NOT NULL, breaths_per_minute INTEGER NOT NULL, hold_pos TEXT, randomize BOOLEAN NOT NULL, is_best_cnt INTEGER NOT NULL DEFAULT 0)');
         createRegimeTableStmt.run();
@@ -280,6 +290,11 @@ async function initBreathDb(serializedSession) {
         findRegimeStmt = db.prepare('SELECT id from regimes where duration_ms = ? AND breaths_per_minute = ? AND hold_pos is ? AND randomize = ?');
         insertRegimeStmt = db.prepare('INSERT INTO regimes(duration_ms, breaths_per_minute, hold_pos, randomize) VALUES(?, ?, ?, ?)');
         regimeByIdStmt = db.prepare('SELECT * from regimes where id = ?');
+
+        const createKeyValueTableStmt = db.prepare('CREATE TABLE IF NOT EXISTS key_value_store(name TEXT PRIMARY KEY, value TEXT NOT NULL)');
+        createKeyValueTableStmt.run();
+        insertKeyValueStmt = db.prepare('INSERT INTO key_value_store(name, value) VALUES(?, ?)');
+        getKeyValueStmt = db.prepare('SELECT value FROM key_value_store where name = ?');
 
         emwave.subscribe(createSegment);
 
@@ -314,6 +329,8 @@ export {
     setRegimeBestCnt,
     getSegmentsAfterDate,
     getTrainingDayCount,
-    saveRegimesForDay
+    saveRegimesForDay,
+    getKeyValue,
+    setKeyValue
 }
 export const forTesting = { initBreathDb, downloadDatabase, createSegment }
