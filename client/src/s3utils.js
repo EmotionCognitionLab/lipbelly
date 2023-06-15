@@ -105,11 +105,11 @@ export default {
      */
     async uploadFile(authSession, localFileSrc, s3Dest) {
         session = authSession;
-        const {identityId, humanId} = await getUserId();
+        const identityId = await getUserId();
         let bucket, key;
         if (!s3Dest || !s3Dest.hasOwn('bucket') || !s3Dest.hasOwn('key')) {
             const pathParts = parse(localFileSrc);
-            ({bucket, key} = getDefaultS3Target(identityId, humanId, pathParts.base));
+            ({bucket, key} = getDefaultS3Target(identityId, pathParts.base));
         } else {
             bucket = s3Dest.bucket;
             key = s3Dest.key;
