@@ -6,7 +6,7 @@
 <script setup>
     import { useRouter } from 'vue-router'
     import { getAuth } from '../../../../common/auth/auth'
-    import { SessionStore } from '../session-store.js'
+    import { SessionStore } from '../../session-store.js'
 
     const router = useRouter()
 
