@@ -21,7 +21,7 @@
         if (message === 'ConnectionFailure') {
             connectionError.value = true
         } else if (message === 'Connected') {
-            router.push({path: '/signin'})
+            router.push({path: '/current-stage'})
         }
     }
 

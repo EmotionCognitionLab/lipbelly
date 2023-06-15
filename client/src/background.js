@@ -6,13 +6,13 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
 const AmazonCognitoIdentity = require('amazon-cognito-auth-js')
 import awsSettings from '../../common/aws-settings.json'
-import { breathDbPath, closeBreathDb } from './breath-data'
+import { breathDbPath, closeBreathDb, getKeyValue, setKeyValue, getRestBreathingDays, getPacedBreathingDays } from './breath-data'
+import { emWaveDbPath, deleteShortSessions as deleteShortEmwaveSessions } from './emwave-data'
+import emwave from './emwave'
 import { SessionStore } from './session-store.js'
 import s3Utils from './s3utils.js'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
-
-import emwave from './emwave'
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -228,6 +228,23 @@ ipcMain.handle('show-login-window', () => {
   })
 })
 
+ipcMain.handle('upload-emwave-data', async (event, session) => {
+  // give emWave a couple of seconds to save any lingering data before quitting
+  await new Promise(resolve => setTimeout(() => {
+    emwave.stopEmWave()
+    resolve()
+  }, 2000))
+  deleteShortEmwaveSessions()
+  const emWaveDb = emWaveDbPath()
+  const fullSession = SessionStore.buildSession(session)
+  await s3Utils.uploadFile(fullSession, emWaveDb)
+  .catch(err => {
+    console.error(err)
+    return (err.message)
+  })
+  return null
+})
+
 ipcMain.handle('upload-breath-data', async (event, session) => {
   closeBreathDb();
   const breathDb = breathDbPath();
@@ -239,6 +256,26 @@ ipcMain.handle('upload-breath-data', async (event, session) => {
   });
   return null;
 });
+
+ipcMain.handle('get-rest-breathing-days', (_event, stage) => {
+  return getRestBreathingDays(stage)
+})
+
+ipcMain.handle('get-paced-breathing-days', (_event, stage) => {
+  return getPacedBreathingDays(stage)
+})
+
+ipcMain.handle('get-key-value', (event, key) => {
+  return getKeyValue(key)
+})
+
+ipcMain.handle('set-key-value', (event, key, value) => {
+  setKeyValue(key, value)
+})
+
+ipcMain.handle('set-stage', async(_event, stage) => {
+  emwave.setStage(stage)
+})
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
