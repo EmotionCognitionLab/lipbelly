@@ -269,7 +269,7 @@ ipcMain.handle('get-key-value', (event, key) => {
   return getKeyValue(key)
 })
 
-ipcMain.handle('set-key-value', (event, key, value) => {
+ipcMain.on('set-key-value', (event, key, value) => {
   setKeyValue(key, value)
 })
 
