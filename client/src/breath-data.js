@@ -233,7 +233,7 @@ function setKeyValue(key, value) {
 }
 
 function getKeyValue(key) {
-    const res = getKeyValueStmt.run(key);
+    const res = getKeyValueStmt.get(key);
     if (!res) return null;
     return res.value;
 }
