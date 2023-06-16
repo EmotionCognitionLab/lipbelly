@@ -56,8 +56,7 @@ async function assignToCondition() {
             const session = await SessionStore.getRendererSession()
             const apiClient = new ApiClient(session)
             await apiClient.assignToCondition({bornSex: sex.value, sexDesc: sexDescription.value})
-
-            window.localStorage.setItem('MindBody.isAssignedToCondition', 'true')
+            window.mainAPI.setKeyValue('isAssignedToCondition', 'true')
             emit('complete')
         } catch (err) {
             console.error(err)
