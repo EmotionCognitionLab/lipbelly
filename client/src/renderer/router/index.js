@@ -15,7 +15,7 @@ const routes = [
   { path: '/login/index.html', component: OauthRedirectComponent }, // to match the oauth redirect we get
   { path: '/signin', component: LoginComponent, name: 'signin', props: true },
   { path: '/rest', component: RestComponent },
-  { path: '/setup', component: SetupComponent },
+  { path: '/setup', name: 'setup', component: SetupComponent },
   { path: '/current-stage', beforeEnter: earningsOrSetup, component: DummyComponent },
   {
     path: '/',
@@ -29,18 +29,11 @@ const router = createRouter({
   routes: routes
 })
 
-function earningsOrSetup() {
-  // no-auth check to see if they've even started assignment to condition
-  if (window.localStorage.getItem('MindBody.isAssignedToCondition') !== 'true') {
-      return {path: '/setup'}
+async function earningsOrSetup() {
+  if (await window.mainAPI.getKeyValue('isAssignedToCondition') !== 'true') {
+    return { name: 'setup' }
   }
-  // if they've at least been assigned to condition, they need to log in
-  // for us to be able to show the streak page
-  if (!isAuthenticated()) {
-      return { name: 'signin', query: { postLoginPath: '/dummy' }}
-  }
-
-  return {path: '/dummy'}
+  return {path: '/dummy'} // this will be replaced by the earnings page
 }
 
 // use navigation guards to handle authentication
