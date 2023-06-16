@@ -37,8 +37,8 @@
 <script setup>
 import { ref } from 'vue';
 import { reactive } from 'vue';
-// import ApiClient from '../../../../common/api/client'
-// import { SessionStore } from '../../session-store'
+import ApiClient from '../../../../common/api/client'
+import { SessionStore } from '../../session-store'
 
 
 let sex = ref('')
@@ -53,9 +53,9 @@ async function assignToCondition() {
     validate();
     if (!Object.keys(errors).length) {
         try {
-            // const session = await SessionStore.getRendererSession()
-            // const apiClient = new ApiClient(session)
-            // await apiClient.assignToCondition({bornSex: sex.value, sexDesc: sexDescription.value})
+            const session = await SessionStore.getRendererSession()
+            const apiClient = new ApiClient(session)
+            await apiClient.assignToCondition({bornSex: sex.value, sexDesc: sexDescription.value})
 
             window.localStorage.setItem('MindBody.isAssignedToCondition', 'true')
             emit('complete')

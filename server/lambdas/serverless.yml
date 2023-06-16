@@ -86,10 +86,10 @@ functions:
   #         method: GET
   #         path: /self/earnings/{earningsType+}
   #         authorizer: serviceAuthorizer
-  #     - httpApi:
-  #         method: POST
-  #         path: /condition
-  #         authorizer: serviceAuthorizer
+      - httpApi:
+          method: POST
+          path: /condition
+          authorizer: serviceAuthorizer
     environment:
       EXPERIMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/experiments}
       USERS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/users}
