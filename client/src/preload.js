@@ -13,7 +13,7 @@ contextBridge.exposeInMainWorld('mainAPI', {
     pacerRegimeChanged: async (startTime, regime) => await ipcRenderer.invoke('pacer-regime-changed', startTime, regime),
     getRestBreathingDays: async (stage) => await ipcRenderer.invoke('get-rest-breathing-days', stage),
     getPacedBreathingDays: async (stage) => await ipcRenderer.invoke('get-paced-breathing-days', stage),
-    getKeyValue: (key) => ipcRenderer.invoke('get-key-value', key),
+    getKeyValue: async (key) => await ipcRenderer.invoke('get-key-value', key),
     setKeyValue: (key, value) => ipcRenderer.send('set-key-value', key, value),
     setStage: (stage) => ipcRenderer.invoke('set-stage', stage)
 })
