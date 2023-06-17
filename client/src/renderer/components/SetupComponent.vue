@@ -29,11 +29,8 @@
 
 <script setup>
     import { ref, onBeforeMount } from 'vue';
-    import { isAuthenticated } from '../../../../common/auth/auth.js'
     import ConditionAssignmentComponent from './ConditionAssignmentComponent.vue'
-    import LoginComponent from './LoginComponent.vue'
     import PacedBreathingComponent from './PacedBreathingComponent.vue'
-    import UploadComponent from './UploadComponent.vue'
     import RestComponent from './RestComponent.vue'
 
     // step 0: nothing initialized yet
@@ -84,10 +81,6 @@
             // stopped this got emitted
             nextStep()
         }
-    }
-
-    function quit() {
-        window.mainAPI.quit()
     }
 
 </script>
