@@ -7,6 +7,7 @@ import ConnectingComponent from '../components/ConnectingComponent.vue'
 import RestComponent from '../components/RestComponent.vue'
 import SetupComponent from '../components/SetupComponent.vue'
 import DummyComponent from '../components/DummyComponent.vue'
+import TrainingComponent from '../components/TrainingComponent.vue'
 
 const noAuthRoutes = ['/signin', '/login/index.html', '/setup', '/', '/index.html']
 
@@ -21,7 +22,8 @@ const routes = [
     path: '/',
     name: 'landing-page',
     component: ConnectingComponent,
-  }
+  },
+  { path: '/training', component: TrainingComponent }
 ]
 
 const router = createRouter({
@@ -33,7 +35,7 @@ async function earningsOrSetup() {
   if (await window.mainAPI.getKeyValue('isAssignedToCondition') !== 'true') {
     return { name: 'setup' }
   }
-  return {path: '/dummy'} // this will be replaced by the earnings page
+  return {path: '/training'} // this will be replaced by the earnings page
 }
 
 // use navigation guards to handle authentication
