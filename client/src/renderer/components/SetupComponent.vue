@@ -21,9 +21,6 @@
         <div v-else-if="step==3">
             <ConditionAssignmentComponent @complete="nextStep" />
         </div>
-        <div v-else-if="step==4">
-            Next you would be taken to do your daily training, but we don't have that done yet.
-        </div>
     </div>
 </template>
 
@@ -32,6 +29,9 @@
     import ConditionAssignmentComponent from './ConditionAssignmentComponent.vue'
     import PacedBreathingComponent from './PacedBreathingComponent.vue'
     import RestComponent from './RestComponent.vue'
+    import { useRouter } from "vue-router"
+
+    const router = useRouter()
 
     // step 0: nothing initialized yet
     // step 1: user has not done rest breathing
@@ -64,7 +64,11 @@
     })
 
     function nextStep() {
-        step.value += 1
+        if (step.value == 3) {
+            router.push({path: '/training'})
+        } else {
+            step.value += 1
+        }
     }
 
     function timerFinished() {
