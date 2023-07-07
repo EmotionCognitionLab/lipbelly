@@ -31,7 +31,7 @@
  */
 
 import awsSettings from '../aws-settings.json';
-import CloudWatchLogs from 'aws-sdk/clients/cloudwatchlogs.js';
+import { CloudWatchLogsClient, CreateLogStreamCommand, DescribeLogStreamsCommand, PutLogEventsCommand } from "@aws-sdk/client-cloudwatch-logs"; 
 import util from 'util';
 
 const streamKey = 'ConsoleCloudWatch:stream';
@@ -59,7 +59,7 @@ export class Logger {
     constructor(override=true, user="unknown") {
         this.override = override;
         this.user = user;
-        this.cwLogs = new CloudWatchLogs({
+        this.cwLogs = new CloudWatchLogsClient({
             region: awsSettings.AWSRegion, 
             accessKeyId: awsSettings.CloudwatchWriter, 
             secretAccessKey: awsSettings.CloudwatchWriterKey
@@ -84,7 +84,7 @@ export class Logger {
      * Creates the log stream and saves the name to local storage. Called
      * at initialization and every pushFrequency ms thereafter.
      */
-    setStream() {
+    async setStream() {
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -92,16 +92,20 @@ export class Logger {
         const stream = `${year}-${month}-${day}`;
         const curStream = this.localStorage.getItem(streamKey);
         if (stream !== curStream) {
-            this.cwLogs.createLogStream({
+            const cmd = new CreateLogStreamCommand({
                 logGroupName: this.logGroupName,
                 logStreamName: stream
-            }, (err, data) => {
-                if (err && err.code !== "ResourceAlreadyExistsException") {
+            });
+            try {
+                await this.cwLogs.send(cmd);
+                this.localStorage.setItem(streamKey, stream);
+            } catch (err) {
+                if (err.name !== "ResourceAlreadyExistsException") {
                     this.error(err, err.stack);
                 } else {
                     this.localStorage.setItem(streamKey, stream);
                 }
-            });
+            }
         }
     }
 
@@ -119,7 +123,7 @@ export class Logger {
         return this[level];
     }
 
-    init() {
+    async init() {
         const levels = ["log", "info", "warn", "error"];
         levels.forEach(level => {
             const origFn = console[level];
@@ -128,50 +132,53 @@ export class Logger {
                 console[level] = newFn;
             }
         });
-        this.setStream();
+        await this.setStream();
 
         // This timer both writes logs to CloudWatch periodically and calls setStream
         // to see if a new log stream needs to be created (i.e., when the date changes).
-        const loggingInterval = setInterval(() => {
+        const loggingInterval = setInterval(async () => {
             this.setStream();
             const unsent = this.logEntries.splice(0);
             const streamName = this.localStorage.getItem(streamKey);
             if (unsent.length) {
-                this.cwLogs.describeLogStreams({
+                const cmd = new DescribeLogStreamsCommand({
                     logGroupName: this.logGroupName,
                     logStreamNamePrefix: streamName
-                }, (err, data) => {
-                    if (err) {
-                        this.error("Error calling describeLogStreams", err);
-                    } else {
-                        if (data.logStreams.length !== 1 
-                            || data.logStreams[0].logStreamName !== streamName) {
-                            this.error(`Expected to get one stream with name ${streamName}, but got ${data.logStreams.length}.`);
-                        } else {
-                            const seqToken = data.logStreams[0].uploadSequenceToken;
-                            this.cwLogs.putLogEvents({
-                                logEvents: unsent,
-                                sequenceToken: seqToken,
-                                logGroupName: this.logGroupName,
-                                logStreamName: streamName
-                            }, (err, data) => {
-                                if (err) {
-                                    this.logEntries = unsent.concat(this.logEntries);
-                                    if (err.code == "InvalidSequenceTokenException") {
-                                        // ignore it - someone must have written to the stream since we called describeLogStreams
-                                        // we'll just log everything on the next call
-                                    } else {
-                                        if (!this.override) {
-                                            // don't do this if we've overridden console logging; it can result in 
-                                            // an infinitely growing list of error messages
-                                            console.error("Error calling putLogEvents", err);
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    }
                 });
+                let descLogStreamsResp;
+                try {
+                    descLogStreamsResp = await this.cwLogs.send(cmd);
+                    if (descLogStreamsResp.logStreams.length !== 1 
+                        || descLogStreamsResp.logStreams[0].logStreamName !== streamName) {
+                        this.error(`Expected to get one stream with name ${streamName}, but got ${descLogStreamsResp.logStreams.length}.`);
+                        return;
+                    }
+                } catch (err) {
+                    this.error("Error calling describeLogStreams", err);
+                }
+                
+                const seqToken = descLogStreamsResp.logStreams[0].uploadSequenceToken;
+                const putLogEventsCmd = new PutLogEventsCommand({
+                    logEvents: unsent,
+                    sequenceToken: seqToken,
+                    logGroupName: this.logGroupName,
+                    logStreamName: streamName
+                });
+                try {
+                    this.cwLogs.send(putLogEventsCmd);
+                } catch (error) {
+                    this.logEntries = unsent.concat(this.logEntries);
+                    if (err.code !== "InvalidSequenceTokenException" && !this.override) {
+                        // if we get an InvalidSequenceTokenException
+                        // ignore it - someone must have written to the stream since we called describeLogStreams
+                        // we'll just log everything on the next call
+
+                        // don't do this if we've overridden console logging; it can result in 
+                        // an infinitely growing list of error messages
+                        console.error("Error calling putLogEvents", err);
+                    }
+                }
+                
             }
         }, this.pushFrequency || 10000);
         // if this is running in a node process we don't want this logging

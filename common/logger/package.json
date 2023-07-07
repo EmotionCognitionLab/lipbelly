@@ -1,12 +1,12 @@
 {
   "name": "logger",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Overrides console.log|error and writes to cloudwatch logs",
-  "main": "logger.js",
+  "main": "dist/logger.bundle.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "webpack"
   },
-  "type": "module",
   "jest": {
     "rootDir": ".",
     "moduleDirectories": [
@@ -28,7 +28,8 @@
   },
   "homepage": "https://github.com/EmotionCognitionLab/lipbelly#readme",
   "dependencies": {
-    "aws-sdk": "^2.1002.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.363.0",
+    "core-js": "^3.31.0",
     "process": "^0.11.10",
     "util": "^0.12.4"
   },
