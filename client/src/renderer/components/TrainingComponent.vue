@@ -20,7 +20,7 @@
                     <RestComponent @timerFinished="breathingDone=true" />
                 </div>
                 <div v-else-if="condition=='B' && !breathingDone">
-                    This is where PacedBreathing will go.
+                    <RestComponent @timerFinished="breathingDone=true" />
                 </div>
             </div>
             <div id="upload" v-if="breathingDone">
