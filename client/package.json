@@ -5,13 +5,19 @@
   "author": "Noah Mercer <noahmerc@usc.edu>",
   "scripts": {
     "lint": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter src",
-    "build:mac:arm64": "DEBUG=electron-builder ./node_modules/.bin/electron-builder build --mac --arm64",
+    "build:mac:arm64": "DEBUG=electron-builder ./node_modules/.bin/electron-builder build --mac --arm64; rm -rf dist",
     "electron:build": "vue-cli-service electron:build",
     "electron:serve": "vue-cli-service electron:serve",
     "lint:fix": "eslint --ext .js,.vue -f ./node_modules/eslint-friendly-formatter --fix src",
     "pack": "npm run pack:main && npm run pack:renderer",
     "postinstall": "npm run lint:fix && ./node_modules/.bin/electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "postuninstall": "electron-builder install-app-deps",
+    "test": "ELECTRON_RUN_AS_NODE=true ./node_modules/.bin/electron ./node_modules/.bin/jest"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.(js|jsx|mjs)$": "babel-jest"
+    }
   },
   "main": "background.js",
   "dependencies": {
