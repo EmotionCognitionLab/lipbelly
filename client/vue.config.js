@@ -13,6 +13,8 @@ module.exports = {
           .test(/\.js$/)
             .include
               .add(path.resolve('node_modules/@aws-sdk'))
+              .add(path.resolve('../common/logger/node_modules/@aws-sdk'))
+              .add(path.resolve('../common/logger/node_modules/@smithy'))
               .end()
           .use('babel-loader')
             .loader('babel-loader')
