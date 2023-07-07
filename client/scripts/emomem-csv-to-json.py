@@ -1,15 +1,20 @@
 # Given a CSV file with columns Set, Valence (aka emotion), and file id,
 # (in that order) parses it and prints out a JSON file organized as:
 # {
-#   set1: {
-#       emotion1: [ file id 1, file id 2, ...],
-#       emotion2: [ file id 1, file id 2, ....],
+#   emotion1: [
+#       {file: id1, set: set1},
+#       {file: id2, set: set1}
 #       ...
-#   },
-#   set2: {
-#       emotion1: [ file id 1, file id 2, ....],
+#       {file: id15, set: set2},
 #       ...
-#   },
+#   ],
+#   emotion2: [
+#       {file: id1, set: set1},
+#       {file: id2, set: set1}
+#       ...
+#       {file: id15, set: set2},
+#       ...
+#   ],
 #   ...
 # }
 # Usage: python emomem-csv-to-json.py --emopics <csv file>
@@ -19,37 +24,25 @@ import json
 
 
 root = {}
-def get_set_obj(set_name):
-    if set_name != 'A' and set_name != 'B' and set_name != 'C':
-        raise Exception(f'Expected set_name to be A, B, or C but got {set_name}.')
-    
-    return root.get(set_name, {})
 
-def get_emo_list(set_obj, emo_name):
+def get_emo_list(emo_name):
     if emo_name != 'Positive' and emo_name != 'Negative' and emo_name != 'Neutral':
         raise Exception(f'Expected emo_name to be Positive, Negative, or Neutral but got "{emo_name}".')
 
-    return set_obj.get(emo_name, [])
+    return root.get(emo_name, [])
 
 def validate():
     root_keys = root.keys()
     if len(root_keys) != 3:
-        raise Exception(f'Expected 3 different lists of images, but found {len(root_keys)}.')
+        raise Exception(f'Expected 3 different emotions, but found {len(root_keys)}.')
     
-    if 'A' not in root_keys or 'B' not in root_keys or 'C' not in root_keys:
-        raise Exception(f'Expected A, B, and C lists of images but found {root_keys.join(",")}.')
+    if 'Positive' not in root_keys or 'Negative' not in root_keys or 'Neutral' not in root_keys:
+        raise Exception(f'Expected Positive, Negative, and Neutral lists of images but found {root_keys.join(",")}.')
 
     for k in root_keys:
-        emo_keys = root[k].keys()
-        if len(emo_keys) != 3:
-            raise Exception(f'Expected 3 different emotions in list {k}, but found {len(emo_keys)}.')
-
-        if 'Positive' not in emo_keys or 'Negative' not in emo_keys or 'Neutral' not in emo_keys:
-            raise Exception(f'Expected Positive, Negative, and Neutral lists of images but found {emo_keys.join(",")}.')
-
-        for ek in emo_keys:
-            if len(root[k][ek]) != 14:
-                raise Exception(f'Expected 14 {ek} images in list {k}, but found {len(root[k][ek])}.')
+        emo_files = root[k]
+        if len(emo_files) != 42:
+            raise Exception(f'Expected 28 different {k} files, but found {len(emo_files)}.')
 
 def _parse_args():
     parser = argparse.ArgumentParser()
@@ -62,11 +55,9 @@ def _main(args):
     with open(args.emo_pics) as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
-            set_obj = get_set_obj(row[0])
-            emo_list = get_emo_list(set_obj, row[1])
-            emo_list.append(f'{row[2]}.jpg')
-            set_obj[row[1]] = emo_list
-            root[row[0]] = set_obj
+            emo_list = get_emo_list(row[1])
+            emo_list.append({'file': f'{row[2]}.jpg', 'set': row[0]})
+            root[row[1]] = emo_list
             
         validate()
         print(json.dumps(root))
