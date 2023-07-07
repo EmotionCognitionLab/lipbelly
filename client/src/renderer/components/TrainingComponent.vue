@@ -17,10 +17,10 @@
             </div>
             <div id="breathing" v-if="instructionsRead">
                 <div v-if="condition=='A' && !breathingDone">
-                    <RestComponent @timerFinished="breathingDone=true" />
+                    <RestComponent :secondsDuration=1200 @timerFinished="breathingDone=true" />
                 </div>
                 <div v-else-if="condition=='B' && !breathingDone">
-                    <RestComponent @timerFinished="breathingDone=true" />
+                    <RestComponent :secondsDuration=1200 @timerFinished="breathingDone=true" />
                 </div>
             </div>
             <div id="upload" v-if="breathingDone">
