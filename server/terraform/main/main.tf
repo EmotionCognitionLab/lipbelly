@@ -267,6 +267,34 @@ resource "aws_ssm_parameter" "earnings-table" {
   value = "${aws_dynamodb_table.earnings-table.name}"
 }
 
+resource "aws_dynamodb_table" "emopics-table" {
+  name           = "lb-${var.env}-emopics"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "userId"
+  range_key      = "order"
+  point_in_time_recovery {
+    enabled = "${terraform.workspace == "prod" ? true : false}"
+  }
+
+  attribute {
+    name = "userId"
+    type = "S"
+  }
+
+  attribute {
+    name = "order"
+    type = "N"
+  }
+}
+
+# save above table name to SSM so serverless can reference it
+resource "aws_ssm_parameter" "emopics-table" {
+  name = "/lb/${var.env}/info/dynamo/table/emopics"
+  description = "Dynamo table holding emotional pictures info"
+  type = "SecureString"
+  value = "${aws_dynamodb_table.emopics-table.name}"
+}
+
 # S3 bucket for participant data
 resource "aws_s3_bucket" "data-bucket" {
   bucket = "${var.data-bucket}"
