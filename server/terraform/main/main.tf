@@ -419,42 +419,6 @@ resource "aws_iam_policy" "dynamodb-write-experiment-data" {
 POLICY
 }
 
-# Policy to allow authenticated cognito users to read
-# from the experiment data table, but only rows where
-# the hash key is their cognito identity id.
-# TODO this can probably be deleted
-# resource "aws_iam_policy" "dynamodb-read-experiment-data" {
-#   name = "lb-${var.env}-dynamodb-read-experiment-data"
-#   path = "/policy/dynamodb/experimentData/read/"
-#   description = "Allows authenticated users to read their own data from Dynamodb experiment data table"
-#   policy = <<POLICY
-# {
-#   "Version": "2012-10-17",
-#   "Statement": [
-#     {
-#       "Effect": "Allow",
-#       "Action": [
-#         "dynamodb:DescribeTable",
-#         "dynamodb:Query",
-#         "dynamodb:GetItem",
-#         "dynamodb:BatchGetItem"
-#       ],
-#       "Resource": [
-#         "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.experiment-data-table.name}"
-#       ],
-#       "Condition": {
-#         "ForAllValues:StringEquals": {
-#           "dynamodb:LeadingKeys": [
-#             "$${cognito-identity.amazonaws.com:sub}"
-#           ]
-#         }
-#       }
-#     }
-#   ]
-# }
-# POLICY
-# }
-
 # policy to allow reading/writing to dynamo
 resource "aws_iam_policy" "dynamodb-read-write" {
   name = "lb-${var.env}-dynamodb-read-write"
@@ -570,35 +534,6 @@ resource "aws_iam_policy" "dynamodb-userid-read" {
 }
 POLICY
 }
-
-# Policy to allow reading from the experiment data table
-# TODO this can probably be deleted
-# resource "aws_iam_policy" "dynamodb-read-all-experiment-data" {
-#   name = "lb-${var.env}-dynamodb-read-all-experiment-data"
-#   path = "/policy/dynamodb/experimentData/readAll/"
-#   description = "Allows reading all data from Dynamodb experiment data table"
-#   policy = <<POLICY
-# {
-#   "Version": "2012-10-17",
-#   "Statement": [
-#     {
-#       "Effect": "Allow",
-#       "Action": [
-#         "dynamodb:DescribeTable",
-#         "dynamodb:Query",
-#         "dynamodb:Scan",
-#         "dynamodb:GetItem",
-#         "dynamodb:BatchGetItem"
-#       ],
-#       "Resource": [
-#         "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.experiment-data-table.name}",
-#         "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.experiment-data-table.name}/index/*"
-#       ]
-#     }
-#   ]
-# }
-# POLICY
-# }
 
 # Policy to allow reading from the segments table
 resource "aws_iam_policy" "dynamodb-read-all-segments" {
