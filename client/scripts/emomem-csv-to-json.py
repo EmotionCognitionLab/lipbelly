@@ -56,7 +56,7 @@ def _main(args):
         reader = csv.reader(csvfile)
         for row in reader:
             emo_list = get_emo_list(row[1])
-            emo_list.append({'file': f'{row[2]}.jpg', 'set': row[0]})
+            emo_list.append({'file': f'{row[2]}.jpg', 'group': row[0]})
             root[row[1]] = emo_list
             
         validate()
