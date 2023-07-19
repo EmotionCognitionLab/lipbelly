@@ -788,8 +788,6 @@ resource "aws_iam_role" "dynamodb-experiment-reader-writer" {
       }
   )
   managed_policy_arns   = [
-      aws_iam_policy.dynamodb-write-experiment-data.arn,
-      # aws_iam_policy.dynamodb-read-experiment-data.arn,
       aws_iam_policy.s3-write-experiment-data.arn,
       aws_iam_policy.s3-read-experiment-data.arn
   ]
