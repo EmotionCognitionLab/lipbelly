@@ -130,47 +130,6 @@ resource "aws_cognito_user_group" "admin" {
 }
 
 # DynamoDB setup
-resource "aws_dynamodb_table" "experiment-data-table" {
-  name           = "lb-${var.env}-experiment-data"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "identityId"
-  range_key      = "experimentDateTime"
-  point_in_time_recovery {
-    enabled = "${terraform.workspace == "prod" ? true : false}"
-  }
-
-  attribute {
-    name = "identityId"
-    type = "S"
-  }
-
-  attribute {
-    name = "experimentDateTime"
-    type = "S"
-  }
-
-  attribute {
-    name = "userId"
-    type = "S"
-  }
-
-  global_secondary_index {
-    name = "userId-experimentDateTime-index"
-    hash_key = "userId"
-    range_key = "experimentDateTime"
-    projection_type = "INCLUDE"
-    non_key_attributes = ["identityId"]
-  }
-}
-
-# save above table name to SSM so serverless can reference it
-resource "aws_ssm_parameter" "dynamo-experiment-data-table" {
-  name = "/lb/${var.env}/info/dynamo/table/experiments"
-  description = "Dynamo table holding experiment data"
-  type = "SecureString"
-  value = "${aws_dynamodb_table.experiment-data-table.name}"
-}
-
 resource "aws_dynamodb_table" "users-table" {
   name           = "lb-${var.env}-users"
   billing_mode   = "PROVISIONED"
@@ -385,39 +344,6 @@ POLICY
 }
 
 data "aws_caller_identity" "current" {}
-
-# Policy to allow authenticated cognito users to write
-# to the experiment data table, but only rows where
-# the hash key is their cognito identity id.
-resource "aws_iam_policy" "dynamodb-write-experiment-data" {
-  name = "lb-${var.env}-dynamodb-write-experiment-data"
-  path = "/policy/dynamodb/experimentData/write/"
-  description = "Allows writing to Dynamodb experiment data table"
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:PutItem",
-        "dynamodb:BatchWriteItem"
-      ],
-      "Resource": [
-        "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.experiment-data-table.name}"
-      ],
-      "Condition": {
-        "ForAllValues:StringEquals": {
-          "dynamodb:LeadingKeys": [
-            "$${cognito-identity.amazonaws.com:sub}"
-          ]
-        }
-      }
-    }
-  ]
-}
-POLICY
-}
 
 # policy to allow reading/writing to dynamo
 resource "aws_iam_policy" "dynamodb-read-write" {
