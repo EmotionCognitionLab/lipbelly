@@ -337,6 +337,57 @@ describe("assignment to condition tested with many users", () => {
     });
 });
 
+describe("setting emotional pictures for a participant", () => {
+    beforeAll(async() => {
+        await th.dynamo.createTable(process.env.EMOPICS_TABLE, 
+            [{AttributeName: 'userId', KeyType: 'HASH'}, {AttributeName: 'order', KeyType: 'RANGE'}], 
+            [{AttributeName: 'userId', AttributeType: 'S'}, {AttributeName: 'order', AttributeType: 'N'}]
+        );
+    });
+
+    test("should throw an error if there are not 84 pictures", async () => {
+        const userId = 'ABC';
+        const event = {
+            body: '[{"file": "foo.jpg", "group": "A"}, {"file": "bar.jpg", "group": "C"}]',
+            requestContext: {
+                authorizer: {jwt: {claims: {sub: userId}}}
+            }
+        };
+        const result = await runLambda('/emopics', 'PUT', event);
+        expect(result.statusCode).toBe(400);
+    });
+
+    test("should save the pictures in the order provided", async () => {
+        const getGroup = () => Math.random() > 0.5 ? 'A' : 'B';
+
+        const pics = [];
+        const userId = 'ABC123';
+        for (let i=0; i<84; i++) {
+            pics.push({file: `${i}.jpg`, group: getGroup()})
+        }
+
+        const event = {
+            body: JSON.stringify(pics),
+            requestContext: {
+                authorizer: {jwt: {claims: {sub: userId}}}
+            }
+        };
+
+        const result = await runLambda('/emopics', 'PUT', event);
+        expect(result.statusCode).toBe(200);
+
+        const storedPics = await fetchAllEmopics(userId);
+        expect(storedPics.length).toEqual(pics.length);
+        const comparablePics = storedPics.map(sp => { return {file: sp.file, group: sp.group} });
+        expect(comparablePics).toEqual(pics);
+
+    });
+
+    afterAll(async () => {
+        await th.dynamo.deleteTable(process.env.EMOPICS_TABLE);
+    });
+});
+
 async function fetchUser(userId) {
     const params = {
         TableName: process.env.USERS_TABLE,
@@ -346,6 +397,16 @@ async function fetchUser(userId) {
     };
     const userRec = await docClient.get(params).promise();
     return userRec.Item;
+}
+
+async function fetchAllEmopics(userId) {
+    const params = {
+        TableName: process.env.EMOPICS_TABLE,
+        KeyConditionExpression: "userId = :idKey",
+        ExpressionAttributeValues: { ":idKey": userId }
+    };
+    const emopics = await docClient.query(params).promise();
+    return emopics.Items;
 }
 
 async function loadAndConfirmUsers(users, targetSex, expectedTargetSexCount) {

@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
 const region = process.env.REGION;
 const usersTable = process.env.USERS_TABLE;
+const emopicsTable = process.env.EMOPICS_TABLE;
 const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
 const docClient = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region});
 import Db from '../../../common/db/db.js';
@@ -31,6 +32,11 @@ exports.handler = async (event) => {
     }
     if (path === "/condition" && method === "POST") {
         return assignToCondition(event.requestContext.authorizer.jwt.claims.sub, JSON.parse(event.body));
+    }
+    if (path === "/emopics") {
+        if (method === "PUT") {
+            return await setEmopics(event.requestContext.authorizer.jwt.claims.sub, JSON.parse(event.body));
+        }
     }
     return errorResponse({statusCode: 400, message: `Unknown operation "${method} ${path}"`});
 }
@@ -194,6 +200,52 @@ const getEarnings = async (userId, earningsType = null) => {
         const db = new Db();
         db.docClient = docClient;
         return await db.earningsForUser(userId, earningsType);
+    } catch (err) {
+        console.error(err);
+        if (!(err instanceof HttpError)) {
+            err = new HttpError(err.message);
+        }
+        return errorResponse(err);
+    }
+}
+
+const setEmopics = async(userId, emopics) => {
+    try {
+        if (emopics.length != 84) {
+            return errorResponse({
+                message: `Expected 84 emotional pictures, but received ${emopics.length}.`,
+                statusCode: 400
+            });
+        }
+
+        const putRequests = emopics.map((p, idx) => {
+            return {
+                PutRequest: {
+                    Item: {
+                        userId: userId,
+                        order: idx,
+                        file: p.file,
+                        group: p.group
+                    }
+                }
+            }
+        });
+
+        // slice into arrays of no more than 25 PutRequests due to DynamoDB limits
+        const chunks = [];
+        for (let i = 0; i < putRequests.length; i += 25) {
+            chunks.push(putRequests.slice(i, i + 25));
+        }
+
+        for (let i=0; i<chunks.length; i++) {
+            const chunk = chunks[i];
+            const params = { RequestItems: {} };
+            params['RequestItems'][emopicsTable] = chunk;
+            await docClient.batchWrite(params).promise();
+        }
+
+        return successResponse({msg: "Save successful"});
+
     } catch (err) {
         console.error(err);
         if (!(err instanceof HttpError)) {

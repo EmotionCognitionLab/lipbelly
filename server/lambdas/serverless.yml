@@ -90,8 +90,12 @@ functions:
           method: POST
           path: /condition
           authorizer: serviceAuthorizer
+      - httpApi:
+          method: PUT
+          path: /emopics
+          authorizer: serviceAuthorizer
     environment:
-      EXPERIMENT_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/experiments}
+      EMOPICS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/emopics}
       USERS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/users}
       DYNAMO_ENDPOINT: "https://dynamodb.${self:provider.region}.amazonaws.com"
     role: ${ssm:/${self:service}/${self:provider.stage}/role/lambda}

@@ -1,1 +1,2 @@
 USERS_TABLE=users
+EMOPICS_TABLE=emopics
