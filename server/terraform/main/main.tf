@@ -535,6 +535,31 @@ resource "aws_iam_policy" "dynamodb-consent-read-write" {
 POLICY
 }
 
+# policy to allow reading from/writing to emopics table
+resource "aws_iam_policy" "dynamodb-emopics-read-write" {
+  name = "lb-${var.env}-dynamodb-emopics-read-write"
+  path = "/policy/dynamodb/emopics/all/"
+  description = "Allows reading from/writing to dynamodb emopics table"
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:UpdateItem",
+        "dynamodb:Query",
+        "dynamodb:BatchWriteItem"
+      ],
+      "Resource": [
+        "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.emopics-table.name}"
+      ]
+    }
+  ]
+}
+POLICY
+}
+
 # policy to allow sns publishing
 resource "aws_iam_policy" "sns-publish" {
   name = "lb-${var.env}-sns-publish"
@@ -787,7 +812,7 @@ resource "aws_iam_role" "lambda" {
   managed_policy_arns   = [
     aws_iam_policy.dynamodb-user-read-write.arn,
     aws_iam_policy.dynamodb-earnings-read.arn,
-    # aws_iam_policy.dynamodb-read-all-experiment-data.arn,
+    aws_iam_policy.dynamodb-emopics-read-write.arn,
     aws_iam_policy.cloudwatch-write.arn
   ]
 }
