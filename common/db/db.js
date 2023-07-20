@@ -314,47 +314,7 @@ export default class Db {
             throw err;
         }
     }
-
-    async lumosPlaysForUser(userId, sinceDate = new Date(0)) {
-        const sinceDateYYYYMMDD = `${sinceDate.getFullYear()}-${(sinceDate.getMonth() + 1).toString().padStart(2,0)}-${sinceDate.getDate().toString().padStart(2, 0)}`
-        try {
-            const params = {
-                TableName: this.lumosPlaysTable,
-                KeyConditionExpression: 'userId = :userId and #dateTime >= :dt',
-                ExpressionAttributeNames: { '#dateTime': 'dateTime' },
-                ExpressionAttributeValues: { ':userId': userId, ':dt': sinceDateYYYYMMDD },
-            };
-
-            const results = await this.query(params);
-            return results.Items;
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-    }
-
-    /**
-     * Returns all rows between startDate and endDate where multiPlay is true
-     * @param {string} startDate date in YYYY-MM-DD HH:mm:ss format (America/Los_Angeles timezone)
-     * @param {string} endDate date in YYYY-MM-DD HH:mm:ss format (America/Los_Angeles timezone)
-     */
-    async lumosMultiPlays(startDate, endDate) {
-        try {
-            const params = {
-                TableName: this.lumosPlaysTable,
-                FilterExpression: '#dateTime >= :sdt and #dateTime <= :edt and multiPlay = :true',
-                ExpressionAttributeNames: { '#dateTime': 'dateTime' },
-                ExpressionAttributeValues: { ':sdt': startDate, ':edt': endDate, ':true': true }
-            }
-
-            const results = await this.scan(params);
-            return results.Items;
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-    }
-
+    
     async earningsForUser(userId, type = null) {
         try {
             const params =  {
