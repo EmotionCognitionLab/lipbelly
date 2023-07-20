@@ -1,24 +1,24 @@
 /**
  * @jest-environment jsdom
  */
-import { selectEmotionalImages } from '../src/emomem-selection.js'
+import { generateEmotionalImages } from '../src/emomem-selection.js'
 import imgData from '../src/emopics.json';
 
-describe("Selecting emotional images", () => {
-    it("should have 84 items", () => {
-        const imgs = selectEmotionalImages();
+describe("Generating emotional images", () => {
+    it("should yield 84 items", () => {
+        const imgs = generateEmotionalImages();
         expect(imgs.length).toBe(84);
     });
 
     it("should have images from only two groups", () => {
-        const imgs = selectEmotionalImages();
+        const imgs = generateEmotionalImages();
         const groups = new Set(imgs.map(i => i.group));
         expect(groups.size).toBe(2);
         expect(['A', 'B', 'C']).toContain(...Array.from(groups));
     });
 
     it("should have two posititve, two negative and two neutral images in each block of six images", () => {
-        const imgs = selectEmotionalImages();
+        const imgs = generateEmotionalImages();
         const neut = imgData['Neutral'];
         const pos = imgData['Positive'];
         const neg = imgData['Negative'];
@@ -34,7 +34,7 @@ describe("Selecting emotional images", () => {
     });
 
     it("should not have pos/neg/neut images in the same order in every group of six", () => {
-        const imgs = selectEmotionalImages();
+        const imgs = generateEmotionalImages();
 
         const neut = imgData['Neutral'];
         const pos = imgData['Positive'];

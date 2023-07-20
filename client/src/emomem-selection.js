@@ -17,7 +17,7 @@ const jspsych = initJsPsych();
 const shuffle = jspsych.randomization.shuffle;
 const sampleWithoutReplacement = jspsych.randomization.sampleWithoutReplacement;
 
-export function selectEmotionalImages() {
+export function generateEmotionalImages() {
     const groups = ['A', 'B', 'C'];
     const selectedGroups = sampleWithoutReplacement(groups, 2);
     const neut = shuffle(imgData['Neutral'].filter(img => selectedGroups.includes(img.group)));

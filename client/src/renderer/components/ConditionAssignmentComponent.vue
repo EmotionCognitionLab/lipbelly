@@ -39,7 +39,7 @@ import { ref } from 'vue';
 import { reactive } from 'vue';
 import ApiClient from '../../../../common/api/client'
 import { SessionStore } from '../../session-store'
-import { selectEmotionalImages } from '../../emomem-selection'
+import { generateEmotionalImages } from '../../emomem-selection'
 
 
 let sex = ref('')
@@ -58,7 +58,7 @@ async function assignToCondition() {
             const apiClient = new ApiClient(session)
             await apiClient.assignToCondition({bornSex: sex.value, sexDesc: sexDescription.value})
             window.mainAPI.setKeyValue('isAssignedToCondition', 'true')
-            await apiClient.setEmopics(selectEmotionalImages());
+            await apiClient.setEmopics(generateEmotionalImages());
             emit('complete')
         } catch (err) {
             console.error(err)
