@@ -60,6 +60,11 @@ export default class ApiClient {
         return await this.doFetch(url, "get", "There was an error getting the lumos account information");
     }
 
+    async setEmopics(pics) {
+        const url =  `${awsSettings.EmopicsApiUrl}`;
+        return await this.doFetch(url, "put", "There was an error saving the emotional picture set.", pics);
+    }
+
     /**
      * Updates the record of the logged-in user.
      * @param {object} updates An object with the fields you want to update and the values you want to set them to
