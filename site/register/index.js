@@ -1,7 +1,7 @@
 import "./style.css";
 import ApiClient from "../../common/api/client";
 import awsSettings from "../../common/aws-settings.json";
-import { Logger } from "../../common/logger";
+import { Logger } from "../../common/logger/logger";
 
 async function init() {
     new Logger(); // overrides console to log to cloud as well
