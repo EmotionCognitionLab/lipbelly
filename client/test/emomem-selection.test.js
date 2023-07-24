@@ -1,8 +1,13 @@
 /**
  * @jest-environment jsdom
  */
-import { generateEmotionalImages } from '../src/emomem-selection.js'
+import { generateEmotionalImages, emotionalImagesForSession } from '../src/emomem-selection.js'
 import imgData from '../src/emopics.json';
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 describe("Generating emotional images", () => {
     it("should yield 84 items", () => {
@@ -62,3 +67,120 @@ describe("Generating emotional images", () => {
 
     });
 });
+
+class MockDb {
+    constructor(subId, data) {
+        this.data = data;
+        this.subId = subId
+    }
+
+    async getUsedEmopicsForCurrentUser() {
+        return this.data.filter(d => d.date && d.userId === this.subId)
+    }
+
+    async getUnusedEmopicsForCurrentUser(count) {
+        const unused = this.data.filter(d => d.date === undefined && d.userId === this.subId)
+        if (unused.length > count) return unused.slice(0, count);
+        return unused;
+    }
+
+    async markEmopicsSkippedForCurrentUser(emopics, date) {
+        this.data.forEach(d => {
+            d['date'] = date;
+            d['skipped'] = true
+        });
+    }
+}
+
+const makeData = (totalUsedCount, usedTodayCount, subId) => {
+    if (totalUsedCount < usedTodayCount) throw new Error('The totalUsedCount must be >= the usedTodayCount');
+
+    const usedPriorCount = totalUsedCount - usedTodayCount;
+    const todayStr = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]');
+    const usedPriorDateStr = dayjs().subtract(3, 'days').tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]');
+    const data = [];
+
+    for (let i=0; i<usedPriorCount; i++) {
+        data.push({userId: subId, order: i, file: `${i}.jpg`, date: usedPriorDateStr});
+    }
+
+    for (let i=0; i<usedTodayCount; i++) {
+        const tmp = i + usedPriorCount;
+        data.push({userId: subId, order: tmp, file: `${tmp}.jpg`, date: todayStr});
+    }
+
+    for (let i=0; i<12; i++) {
+        const tmp = i + usedPriorCount + usedTodayCount;
+        data.push({userId: subId, order: tmp, file: `${tmp}.jpg`})
+    }
+
+    return data;
+}
+
+describe("Selecting emotional images for session", () => {
+
+    it("should return six images when none have been done today and the number of total done images % 6 is 0", async () => {
+        await testSelectEmotionalImagesForSession(6, 0, 6);
+    });
+
+    it("should return six images when six have been done today", async () => {
+        await testSelectEmotionalImagesForSession(6, 6, 6);
+    });
+
+    it("should return no images when twelve have been done today", async () => {
+        await testSelectEmotionalImagesForSession(18, 12, 0);
+    });
+
+    it("should return the remaining images when >0 and <6 have been done today", async () => {
+        await testSelectEmotionalImagesForSession(16, 4, 6 - 4);
+    });
+
+    it("should return the remaining images when >6 and <12 have been done today", async () => {
+        await testSelectEmotionalImagesForSession(19, 7, 6 - 1);
+    });
+
+    it("should throw an error when >12 images have been done today", async () => {
+        const subId = 'ABC123';
+        const tooMany = 13;
+        const data = makeData(tooMany, tooMany, subId);
+        const mockDb = new MockDb(subId, data);
+
+        await expect(emotionalImagesForSession(mockDb)).rejects.toThrowError(`Expected a maximum of 12 emotional images to have been displayed today, but found ${tooMany}.`);
+    });
+
+    it("should return six images and mark missed images skipped when none have been done today and the number of total done images % 6 > 0", async () => {
+        const subId = 'ABC123';
+        const totalDone = 15;
+        const doneToday = 0;
+        const data = makeData(totalDone, doneToday, subId);
+        const mockDb = new MockDb(subId, data);
+        const skipSpy = jest.spyOn(mockDb, 'markEmopicsSkippedForCurrentUser');
+
+        const pics = await emotionalImagesForSession(mockDb);
+        expect(pics.length).toBe(6);
+
+        const expectedFirstPic = totalDone + totalDone % 6 + doneToday;
+        for (let i=expectedFirstPic; i<6 + expectedFirstPic; i++) {
+            expect(pics[i - expectedFirstPic].order).toBe(i);
+        }
+
+        expect(skipSpy).toHaveBeenCalledTimes(1);
+        expect(skipSpy.mock.calls[0][0].length).toBe(totalDone % 6);
+        const now = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ss');
+        for (let i=totalDone; i<skipSpy.mock.calls[0][0].length + totalDone; i++){
+            const skipped = skipSpy.mock.calls[0][0][i-totalDone];
+            expect(skipped.order).toBe(i);
+            expect(skipped.skipped).toBeTruthy();
+            expect(skipped.date.startsWith(now)).toBeTruthy();
+        }
+    });
+
+});
+
+const testSelectEmotionalImagesForSession = async (totalDoneCount, doneTodayCount, expectedCount) => {
+    const subId = 'ABC123';
+    const data = makeData(totalDoneCount, doneTodayCount, subId);
+    const mockDb = new MockDb(subId, data);
+    const pics = await emotionalImagesForSession(mockDb);
+    expect(pics.length).toBe(expectedCount);
+}
