@@ -1,6 +1,5 @@
 import { getAuth, sendPhoneVerificationCode, updateUserAttributes, verifyPhone } from "auth/auth.js";
 import { validPhoneNumber } from "js/validate.js";
-import { showAssessment } from "../assessments/assessments";
 import './style.css';
 import ApiClient from "../../common/api/client";
 
@@ -148,7 +147,6 @@ async function showPhoneConfirmForm() {
 }
 
 function goToAssessments() {
-    const body = document.getElementsByTagName('body')[0];
     const idToken = cachedSession.getIdToken().getJwtToken();
     if (!idToken) {
         showError(null, 'There was an error with your login');
@@ -158,7 +156,11 @@ function goToAssessments() {
     const payload = idToken.split('.')[1];
     const tokenobj = JSON.parse(atob(payload));
     const uid = tokenobj.sub;
-    showAssessment(uid, body);
+
+    const assessmentPrefix = 'https://usc.qualtrics.com/jfe/form/';
+    const assessmentId = 'SV_4H0l9LJmeR6AlfM';
+    window.location.href = assessmentPrefix + assessmentId + `?uid=${uid}`;
+
 }
 
 function showError(err, msg) {
