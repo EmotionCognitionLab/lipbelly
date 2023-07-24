@@ -16,7 +16,7 @@ export default class Db {
         this.identityPoolId = options.identityPoolId || awsSettings.IdentityPoolId;
         this.userPoolId = options.userPoolId || awsSettings.UserPoolId;
         this.earningsTable = options.earningsTable || awsSettings.EarningsTable;
-        this.experimentTable = options.experimentTable || awsSettings.ExperimentTable;
+        this.emopicsTable = options.emopicsTable || awsSettings.EmopicsTable;
         this.lumosAcctTable = options.lumosAcctTable || awsSettings.LumosAcctTable;
         this.lumosPlaysTable = options.lumosPlaysTable || awsSettings.LumosPlaysTable;
         this.userExperimentIndex = options.userExperimentIndex || awsSettings.UserExperimentIndex;
@@ -47,6 +47,66 @@ export default class Db {
         }, {region: this.region});
         this.docClient = new DynamoDB.DocumentClient({region: this.region, credentials: this.credentials});
         this.subId = this.constructor.getSubIdFromSession(sess);
+     }
+
+
+     async getUsedEmopicsForCurrentUser() {
+        return await this.getEmopicsForCurrentUser(true);
+     }
+
+     async getUnusedEmopicsForCurrentUser(count) {
+        const emopics = await this.getEmopicsForCurrentUser(false, count);
+        if (count < emopics.length) return emopics.slice(0, count);
+        return emopics;
+     }
+
+     async getEmopicsForCurrentUser(used, count) {
+        try {
+            const maxItems = count == undefined ? Number.MAX_SAFE_INTEGER : count; 
+            let ExclusiveStartKey, dynResults
+            const allResults = [];
+    
+            do {
+                const params = {
+                    TableName: this.emopicsTable,
+                    ExclusiveStartKey,
+                    KeyConditionExpression: `userId = :uidKey`,
+                    ExpressionAttributeValues: { ':uidKey': this.subId }
+                };
+                if (used) {
+                    params['FilterExpression'] = "attribute_exists(#date)";
+                    params['ExpressionAttributeNames'] = {"#date": 'date'};
+                }
+                dynResults = await this.query(params);
+                ExclusiveStartKey = dynResults.LastEvaluatedKey;
+                allResults.push(...dynResults.Items.map(i => ({file: i.file, order: i.order})));
+            } while (dynResults.LastEvaluatedKey && allResults.length < maxItems)
+            
+            return allResults;
+
+        } catch (err) {
+            this.logger.error(err);
+            throw err;
+        }
+     }
+
+     async markEmopicsSkippedForCurrentUser(emopics, date) {
+        for (const p of emopics) {
+            const order = p.order; 
+            try {
+                const params = {
+                    TableName: this.emopicsTable,
+                    Key: { userId: this.subId, order: order },
+                    UpdateExpression: 'set skipped = :true, #date = :date',
+                    ExpressionAttributeNames: {'#date': date},
+                    ExpressionAttributeValues: {':true': true, ':date': date}
+                };
+                await this.update(params);
+            } catch (err) {
+                this.logger.error(`Failed to set skipped=true, date=${date} for emopic with subId ${this.subId}, order: ${order}.`, err);
+                throw err;
+            }
+        }
      }
 
      async saveResults(experiment, results, userId = null) {
