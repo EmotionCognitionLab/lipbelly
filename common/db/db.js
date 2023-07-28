@@ -28,6 +28,7 @@ export default class Db {
             this.docClient = new DynamoDB.DocumentClient({region: this.region});
         }
         this.logger = new Logger(false);
+        this.logger.init(); // TODO figure out how we can await this
         this.isRefreshing = false; // credential/session refreshing flag
      }
 

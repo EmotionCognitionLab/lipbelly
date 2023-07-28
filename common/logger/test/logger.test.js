@@ -1,7 +1,7 @@
-import CloudWatchLogs from 'aws-sdk/clients/cloudwatchlogs';
-import awsSettings from '../../aws-settings.json';
+import { mockClient } from 'aws-sdk-client-mock'
 import { Logger } from "../logger.js";
-import util from 'util';
+import { CloudWatchLogsClient, CreateLogStreamCommand, PutLogEventsCommand, DescribeLogStreamsCommand } from '@aws-sdk/client-cloudwatch-logs';
+import awsSettings from '../../aws-settings.json';
 
 function logStreamName() {
     const now = new Date();
@@ -11,20 +11,12 @@ function logStreamName() {
     return `${year}-${month}-${day}`;
 }
 
-let mockCreateLogStream = jest.fn((params, callback) => callback(null, null));
 const nextSequenceToken = 'ABC123';
-let mockPutLogEvents = jest.fn((params, callback) => callback(null, {nextSequenceToken: nextSequenceToken}));
-let mockDescribeLogStreams = jest.fn((params, callback) => callback(null, {logStreams: [{logStreamName: logStreamName(), uploadSequenceToken: nextSequenceToken}]}))
-
-jest.mock('aws-sdk/clients/cloudwatchlogs', () => {
-    return jest.fn().mockImplementation(() => {
-        return {
-            createLogStream: mockCreateLogStream,
-            describeLogStreams: mockDescribeLogStreams,
-            putLogEvents: mockPutLogEvents
-        };
+const mockCwLogsClient = mockClient(CloudWatchLogsClient);
+mockCwLogsClient.on(DescribeLogStreamsCommand)
+    .resolves({
+        logStreams: [ { logStreamName: logStreamName(), uploadSequenceToken: nextSequenceToken }]
     });
-});
 
 describe("Logger", () => {
     let origStorage;
@@ -32,8 +24,8 @@ describe("Logger", () => {
     let localStorageMock;
     const localStorage = {};
 
-    beforeEach(() => {
-        jest.useFakeTimers("legacy");
+    beforeEach(async () => {
+        jest.useFakeTimers();
         localStorageMock = {
             getItem: jest.fn((key) => localStorage[key]),
             setItem: jest.fn((key, item) => localStorage[key] = item)
@@ -41,6 +33,7 @@ describe("Logger", () => {
         origStorage = global.localStorage;
         global.localStorage = localStorageMock;
         l = new Logger();
+        await l.init();
     });
 
     afterEach(() => {
@@ -50,12 +43,10 @@ describe("Logger", () => {
         localStorageMock.getItem.mockClear();
         localStorageMock.setItem.mockClear();
         global.localStorage = origStorage;
-        mockCreateLogStream.mockClear();
-        mockPutLogEvents.mockClear();
-        mockDescribeLogStreams.mockClear();
+        mockCwLogsClient.resetHistory();
     });
 
-    it("should override console .log, .info, .warn and .error by default", () => {
+    it("should override console .log, .info, .warn and .error", () => {
         const logMock = jest.fn();
         l.storeLogMsg = logMock;
         ["log", "info", "warn", "error"].forEach(level => {
@@ -67,8 +58,9 @@ describe("Logger", () => {
         });
     });
 
-    it("should not override console .log, .info, .warn and .error when override is false", () => {
+    it("should not override console .log, .info, .warn and .error when override is false", async () => {
         const noOverride = new Logger(false);
+        await noOverride.init();
         const logMock = jest.fn();
         noOverride.storeLogMsg = logMock;
         ["log", "info", "warn", "error"].forEach(level => {
@@ -80,9 +72,9 @@ describe("Logger", () => {
     });
 
     it("should create a log stream named using today's date", () => {
-        expect(mockCreateLogStream.mock.calls.length).toBe(1);
+        expect(mockCwLogsClient.commandCalls(CreateLogStreamCommand).length).toBe(1);
         const today = logStreamName();
-        expect(mockCreateLogStream.mock.calls[0][0]).toStrictEqual({logGroupName: awsSettings.CloudwatchLogGroup, logStreamName: today});
+        expect(mockCwLogsClient.commandCalls(CreateLogStreamCommand)[0].args[0].input).toStrictEqual({logGroupName: awsSettings.CloudwatchLogGroup, logStreamName: today});
     });
 
     it("should save the log stream name to local storage", () => {
@@ -91,24 +83,24 @@ describe("Logger", () => {
         expect(localStorageMock.setItem.mock.calls[0][1]).toBe(streamName);
     });
 
-    it("should write all log events to cloudwatch every pushFrequncy milliseconds", () => {
+    it("should write all log events to cloudwatch every pushFrequncy milliseconds", async () => {
         const logMsg = "A log call";
         const errorMsg = "An error call";
         console.log(logMsg);
         console.error(errorMsg);
-        jest.advanceTimersByTime(l.pushFrequency);
-        expect(mockPutLogEvents.mock.calls.length).toBe(1);
-        const messages = mockPutLogEvents.mock.calls[0][0].logEvents.map(le => le.message);
+        await jest.advanceTimersByTimeAsync(l.pushFrequency);
+        expect(mockCwLogsClient.commandCalls(PutLogEventsCommand).length).toBe(1);
+        const messages = mockCwLogsClient.commandCalls(PutLogEventsCommand)[0].args[0].input.logEvents.map(le => le.message);
         expect(messages).toContain(JSON.stringify({message: logMsg + " \n", level: "log", user: "unknown"}));
         expect(messages).toContain(JSON.stringify({message: errorMsg + " \n", level: "error", user: "unknown"}));
     });
 
     it("should log user information if provided", () => {
         const userId = "some-user-id";
-        const userLogger = new Logger(false, userId);
+        l.user = userId;
         const logMsg = "I am logging from a user";
-        userLogger.log(logMsg);
-        const message = userLogger.logEntries[0].message;
+        console.log(logMsg);
+        const message = l.logEntries[0].message;
         expect(message).toContain(JSON.stringify({message: logMsg + " \n", level: "log", user: userId}));
     });
 
@@ -122,27 +114,40 @@ describe("Logger", () => {
             origDateNowFn = Date.now;
             dateSpy = jest.spyOn(global, "Date").mockImplementation(() => mockDate);
             Date.now = jest.fn(() => now + 24 * 60 * 60 * 1000);
+            mockCwLogsClient.on(DescribeLogStreamsCommand)
+            .resolvesOnce({
+                logStreams: [ { logStreamName: logStreamName(), uploadSequenceToken: nextSequenceToken }]
+            });
+
         });
 
         afterEach(() => {
             dateSpy.mockRestore();
             Date.now = origDateNowFn;
+            // reset mock to use regular, unmocked date
+            mockCwLogsClient.on(DescribeLogStreamsCommand)
+            .resolves({
+                logStreams: [ { logStreamName: logStreamName(), uploadSequenceToken: nextSequenceToken }]
+            });
+
         });
 
-        it("should create a new log stream when attempting to log something on a new day", () => {
-            jest.advanceTimersByTime(l.pushFrequency);
-            expect(mockCreateLogStream.mock.calls.length).toBe(2);
-            expect(mockCreateLogStream.mock.calls[1][0].logStreamName).toBe(logStreamName());
+        it("should create a new log stream when attempting to log something on a new day", async () => {
+            await jest.advanceTimersByTimeAsync(l.pushFrequency);
+            expect(mockCwLogsClient.commandCalls(CreateLogStreamCommand).length).toBe(2);
+            expect(mockCwLogsClient.commandCalls(CreateLogStreamCommand)[1].args[0].input.logStreamName).toBe(logStreamName());
         });
     });
 
-    it("should call describeLogStreams before pushing to cloudwatch and use the token returned when pushing", () => {
+    it("should call describeLogStreams before pushing to cloudwatch and use the token returned when pushing", async () => {
         console.log("Confirming call to describeLogStreams");
-        jest.advanceTimersByTime(l.pushFrequency);
-        expect(mockDescribeLogStreams.mock.calls.length).toBe(1);
-        expect(mockDescribeLogStreams.mock.calls[0][0].logStreamNamePrefix).toBe(logStreamName());
-        expect(mockPutLogEvents.mock.calls.length).toBe(1);
-        expect(mockPutLogEvents.mock.calls[0][0].sequenceToken).toBe(nextSequenceToken); // TODO make this less brittle; could break if someone changes mockDescribeLogStreams definition
+        await jest.advanceTimersByTimeAsync(l.pushFrequency);
+        const descCalls = mockCwLogsClient.commandCalls(DescribeLogStreamsCommand);
+        expect(descCalls.length).toBe(1);
+        expect(descCalls[0].args[0].input.logStreamNamePrefix).toBe(logStreamName());
+        const putCalls = mockCwLogsClient.commandCalls(PutLogEventsCommand);
+        expect(putCalls.length).toBe(1);
+        expect(putCalls[0].args[0].input.sequenceToken).toBe(nextSequenceToken);
     });
 
     describe("with error on putLogEvents", () => {
@@ -150,51 +155,28 @@ describe("Logger", () => {
             code: "SomeRandomException",
             message: `Insert obscure error code here: CDE-123-ABC-789`
         };
-        let mockError;
 
         beforeEach(() => {
-            mockPutLogEvents
-                .mockImplementationOnce((params, callback) => callback(putLogError, null));
-            jest.clearAllTimers();
-            mockError = jest.spyOn(console, "error");
+            mockCwLogsClient.on(PutLogEventsCommand).rejectsOnce(putLogError);
         });
 
         afterEach(() => {
-            mockError.mockReset();
+            jest.clearAllTimers();
         });
 
-        it("should write log events on the second try if the first one fails", () => {
-            const altLogger = new Logger();
+        it("should write log events on the second try if the first one fails", async () => {
             const msg1 = "checking log event writing, take 1";
             console.log(msg1);
-            jest.advanceTimersByTime(altLogger.pushFrequency);
+            await jest.advanceTimersByTimeAsync(l.pushFrequency);
+            
             const msg2 = "checking log event writing, take 2";
             console.log(msg2);
-            jest.advanceTimersByTime(altLogger.pushFrequency);
-            expect(mockPutLogEvents.mock.calls.length).toBe(2);
-            const messages = mockPutLogEvents.mock.calls[1][0].logEvents.map(le => le.message);
+            await jest.advanceTimersByTimeAsync(l.pushFrequency);
+            const putCalls = mockCwLogsClient.commandCalls(PutLogEventsCommand);
+            expect(putCalls.length).toBe(2);
+            const messages = putCalls[1].args[0].input.logEvents.map(le => le.message);
             expect(messages).toContain(JSON.stringify({message: msg1 + " \n", level: "log", user: "unknown"}));
             expect(messages).toContain(JSON.stringify({message: msg2 + " \n", level: "log", user: "unknown"}));
-        });
-    
-        it("should call console.error on a logging failure when override is false", () => {
-            const altLogger = new Logger(false);
-            const msg1 = "checking log event writing, take 1";
-            altLogger.log(msg1);
-            jest.advanceTimersByTime(altLogger.pushFrequency);
-            expect(mockError.mock.calls.length).toBe(1);
-            expect(mockError.mock.calls[0][0]).toBe("Error calling putLogEvents");
-            expect(mockError.mock.calls[0][1]).toStrictEqual(putLogError);
-            mockError.mockReset();
-        });
-    
-        it("should not call console.error on a logging failure when override is true", () => {
-            const altLogger = new Logger(true);
-            const msg1 = "checking log event writing, take 1";
-            altLogger.log(msg1);
-            jest.advanceTimersByTime(altLogger.pushFrequency);
-            expect(mockError.mock.calls.length).toBe(0);
-            mockError.mockReset();
         });
     });
 });

@@ -2,10 +2,11 @@ import Database from 'better-sqlite3'
 import { ipcMain, app } from 'electron'
 const { Logger } = require('../../common/logger/logger.js')
 
-let logger = new Logger(false);
+const logger = new Logger(false);
+(async () => { await logger.init() })();
 
 ipcMain.on('current-user', (_event, user) => {
-    logger = new Logger(false, user);
+    logger.user = user;
 });
 
 function emWaveDbPath() {

@@ -15,6 +15,7 @@
  * 
  * In either case you can also use it like this:
  *   const l = new Logger();
+ *   await l.init();
  *   l.log("This is a log message");
  *   l.error("This is an error message");
  * 
@@ -57,12 +58,15 @@ export class Logger {
      * @param {*} override true to override console.log, .info, .warn and .error, false to leave them alone.
      */
     constructor(override=true, user="unknown") {
+        this.origConsole = {};
         this.override = override;
         this.user = user;
         this.cwLogs = new CloudWatchLogsClient({
             region: awsSettings.AWSRegion, 
-            accessKeyId: awsSettings.CloudwatchWriter, 
-            secretAccessKey: awsSettings.CloudwatchWriterKey
+            credentials: {
+                accessKeyId: awsSettings.CloudwatchWriter, 
+                secretAccessKey: awsSettings.CloudwatchWriterKey
+            }
         });
         
         this.logGroupName = awsSettings.CloudwatchLogGroup;
@@ -77,7 +81,6 @@ export class Logger {
         } else {
             this.localStorage = window.localStorage;
         }
-        this.init();
     }
 
     /**
@@ -115,7 +118,7 @@ export class Logger {
         const msg = util.format(args[0], ...args.slice(1), "\n");
         this.logEntries.push({message: JSON.stringify({message: msg, level: level, user: this.user}), timestamp: Date.now()});
 
-        origLogFn(...args);
+        origLogFn.apply(this, args);
     }
 
     buildLogFn(origLogFn, level)  {
@@ -126,7 +129,8 @@ export class Logger {
     async init() {
         const levels = ["log", "info", "warn", "error"];
         levels.forEach(level => {
-            const origFn = console[level];
+            const origFn = console[level].bind(console);
+            this.origConsole[level] = origFn;
             const newFn = this.buildLogFn(origFn, level); // creates this.log, this.info, etc.
             if (typeof(console) !== "undefined" && this.override) {
                 console[level] = newFn;
@@ -137,7 +141,7 @@ export class Logger {
         // This timer both writes logs to CloudWatch periodically and calls setStream
         // to see if a new log stream needs to be created (i.e., when the date changes).
         const loggingInterval = setInterval(async () => {
-            this.setStream();
+            await this.setStream();
             const unsent = this.logEntries.splice(0);
             const streamName = this.localStorage.getItem(streamKey);
             if (unsent.length) {
@@ -148,13 +152,18 @@ export class Logger {
                 let descLogStreamsResp;
                 try {
                     descLogStreamsResp = await this.cwLogs.send(cmd);
-                    if (descLogStreamsResp.logStreams.length !== 1 
-                        || descLogStreamsResp.logStreams[0].logStreamName !== streamName) {
+                    if (descLogStreamsResp.logStreams.length !== 1) {
                         this.error(`Expected to get one stream with name ${streamName}, but got ${descLogStreamsResp.logStreams.length}.`);
+                        return;
+                    }
+                    if (descLogStreamsResp.logStreams.length == 1 && 
+                        descLogStreamsResp.logStreams[0].logStreamName !== streamName) {
+                        this.error(`Expected logStreamName to be ${streamName}, but it is ${descLogStreamsResp.logStreams[0].logStreamName}.`);
                         return;
                     }
                 } catch (err) {
                     this.error("Error calling describeLogStreams", err);
+                    return;
                 }
                 
                 const seqToken = descLogStreamsResp.logStreams[0].uploadSequenceToken;
@@ -165,17 +174,15 @@ export class Logger {
                     logStreamName: streamName
                 });
                 try {
-                    this.cwLogs.send(putLogEventsCmd);
-                } catch (error) {
+                    await this.cwLogs.send(putLogEventsCmd);
+                } catch (err) {
                     this.logEntries = unsent.concat(this.logEntries);
-                    if (err.code !== "InvalidSequenceTokenException" && !this.override) {
+                    if (err.code !== "InvalidSequenceTokenException") {
                         // if we get an InvalidSequenceTokenException
                         // ignore it - someone must have written to the stream since we called describeLogStreams
                         // we'll just log everything on the next call
 
-                        // don't do this if we've overridden console logging; it can result in 
-                        // an infinitely growing list of error messages
-                        console.error("Error calling putLogEvents", err);
+                        this.origConsole.error.call(this, "Error calling putLogEvents", err);
                     }
                 }
                 

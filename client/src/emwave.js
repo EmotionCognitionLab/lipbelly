@@ -6,7 +6,9 @@ const CBuffer = require('CBuffer');
 const { epToCoherence } = require('./coherence.js')
 const { Logger } = require('../../common/logger/logger.js')
 
-let logger = new Logger(false)
+const logger = new Logger(false);
+(async () => { await logger.init() })();
+
 let emWavePid = null;
 const client = net.Socket();
 const artifactLimit = 60; // we alert if there are more than this many artifacts in 60s
@@ -61,7 +63,7 @@ ipcMain.handle('pacer-regime-changed', (_event, sessionStartTime, regime) => {
 });
 
 ipcMain.on('current-user', (_event, user) => {
-    logger = new Logger(false, user)
+    logger.user = user
 })
 
 function notifyAvgCoherence() {

@@ -4,7 +4,8 @@ import awsSettings from "../../common/aws-settings.json";
 import { Logger } from "../../common/logger/logger";
 
 async function init() {
-    new Logger(); // overrides console to log to cloud as well
+    const l = new Logger(); // overrides console to log to cloud as well
+    await l.init();
     hideError();
     const queryParams = new URLSearchParams(window.location.search.substring(1));
     const envelopeId = queryParams.get("envelopeId");
