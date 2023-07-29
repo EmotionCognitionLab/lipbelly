@@ -68,27 +68,31 @@ describe("Generating emotional images", () => {
     });
 });
 
-class MockDb {
+class MockApiClient {
     constructor(subId, data) {
         this.data = data;
         this.subId = subId
     }
 
-    async getUsedEmopicsForCurrentUser() {
-        return this.data.filter(d => d.date && d.userId === this.subId)
-    }
-
-    async getUnusedEmopicsForCurrentUser(count) {
+    async getEmopics(used, count) {
+        if (used) {
+            return this.data.filter(d => d.date && d.userId === this.subId);
+        }
+        // really only unused should be requested with a count
         const unused = this.data.filter(d => d.date === undefined && d.userId === this.subId)
         if (unused.length > count) return unused.slice(0, count);
         return unused;
     }
 
-    async markEmopicsSkippedForCurrentUser(emopics, date) {
-        this.data.forEach(d => {
-            d['date'] = date;
-            d['skipped'] = true
-        });
+    async markEmopicsSkipped(emopics) {
+        const todayStr = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]');
+        for (const ep of emopics) {
+            const toSkip = this.data.find(d => d.order == ep.order && d.userId == ep.userId);
+            if (toSkip) {
+                toSkip['date'] = todayStr;
+                toSkip['skipped'] = true;
+            }
+        }
     }
 }
 
@@ -143,9 +147,9 @@ describe("Selecting emotional images for session", () => {
         const subId = 'ABC123';
         const tooMany = 13;
         const data = makeData(tooMany, tooMany, subId);
-        const mockDb = new MockDb(subId, data);
+        const mockClient = new MockApiClient(subId, data);
 
-        await expect(emotionalImagesForSession(mockDb)).rejects.toThrowError(`Expected a maximum of 12 emotional images to have been displayed today, but found ${tooMany}.`);
+        await expect(emotionalImagesForSession(mockClient)).rejects.toThrowError(`Expected a maximum of 12 emotional images to have been displayed today, but found ${tooMany}.`);
     });
 
     it("should return six images and mark missed images skipped when none have been done today and the number of total done images % 6 > 0", async () => {
@@ -153,10 +157,10 @@ describe("Selecting emotional images for session", () => {
         const totalDone = 15;
         const doneToday = 0;
         const data = makeData(totalDone, doneToday, subId);
-        const mockDb = new MockDb(subId, data);
-        const skipSpy = jest.spyOn(mockDb, 'markEmopicsSkippedForCurrentUser');
+        const mockClient = new MockApiClient(subId, data);
+        const skipSpy = jest.spyOn(mockClient, 'markEmopicsSkipped');
 
-        const pics = await emotionalImagesForSession(mockDb);
+        const pics = await emotionalImagesForSession(mockClient);
         expect(pics.length).toBe(6);
 
         const expectedFirstPic = totalDone + totalDone % 6 + doneToday;
@@ -180,7 +184,7 @@ describe("Selecting emotional images for session", () => {
 const testSelectEmotionalImagesForSession = async (totalDoneCount, doneTodayCount, expectedCount) => {
     const subId = 'ABC123';
     const data = makeData(totalDoneCount, doneTodayCount, subId);
-    const mockDb = new MockDb(subId, data);
-    const pics = await emotionalImagesForSession(mockDb);
+    const mockClient = new MockApiClient(subId, data);
+    const pics = await emotionalImagesForSession(mockClient);
     expect(pics.length).toBe(expectedCount);
 }

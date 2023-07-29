@@ -62,11 +62,11 @@ export function generateEmotionalImages() {
  * that the images that were not rated in the interrupted session must be marked as skipped
  * and the next six images in the list should be selected.
  */
-export async function emotionalImagesForSession(db) {
-    const usedPics = await db.getUsedEmopicsForCurrentUser();
+export async function emotionalImagesForSession(apiClient) {
+    const usedPics = await apiClient.getEmopics(true);
     const todayDate = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DD');
     const usedToday = usedPics.filter(p => p.date.startsWith(todayDate));
-    const nextUnused = await db.getUnusedEmopicsForCurrentUser(11); // this is the max we could possible need for one session - 5 skipped and six new to display
+    const nextUnused = await apiClient.getEmopics(false, 11); // 11 is the max we could possible need for one session - 5 skipped and six new to display
     let result = [];
 
     if (usedToday.length == 0) {
@@ -76,8 +76,7 @@ export async function emotionalImagesForSession(db) {
             // before today and not finished it. Mark the remaining ones
             // in that set as skipped
             skipped = 6 - usedPics.length % 6;
-            const fullDate = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]');
-            db.markEmopicsSkippedForCurrentUser(nextUnused.slice(0, skipped), fullDate);
+            apiClient.markEmopicsSkipped(nextUnused.slice(0, skipped));
         }
         result = nextUnused.slice(skipped, skipped + 6);
     } else if (usedToday.length == 6) {

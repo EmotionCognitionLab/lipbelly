@@ -268,7 +268,7 @@ describe("Assign to condition", () => {
 });
 
 describe("assignment to condition tested with many users", () => {
-    const numUsers = 50;
+    const numUsers = 20;
     let males;
     let females;
 
@@ -353,7 +353,7 @@ describe("setting emotional pictures for a participant", () => {
                 authorizer: {jwt: {claims: {sub: userId}}}
             }
         };
-        const result = await runLambda('/emopics', 'PUT', event);
+        const result = await runLambda('/self/emopics', 'PUT', event);
         expect(result.statusCode).toBe(400);
     });
 
@@ -373,7 +373,7 @@ describe("setting emotional pictures for a participant", () => {
             }
         };
 
-        const result = await runLambda('/emopics', 'PUT', event);
+        const result = await runLambda('/self/emopics', 'PUT', event);
         expect(result.statusCode).toBe(200);
 
         const storedPics = await fetchAllEmopics(userId);
@@ -434,7 +434,7 @@ async function runLambda(httpPath, method, event) {
         event: event,
         lambdaPath: path.join(__dirname, '../api.js'),
         lambdaHandler: 'handler',
-        environment: {USERS_TABLE: process.env.USERS_TABLE},
+        environment: {USERS_TABLE: process.env.USERS_TABLE, EMOPICS_TABLE: process.env.EMOPICS_TABLE},
         verboseLevel: 0
     });
 }

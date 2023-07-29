@@ -1,0 +1,22 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "API for client code to communicate with AWS",
+  "main": "api.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EmotionCognitionLab/lipbelly.git"
+  },
+  "author": "Noah Mercer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EmotionCognitionLab/lipbelly/issues"
+  },
+  "homepage": "https://github.com/EmotionCognitionLab/lipbelly#readme",
+  "dependencies": {
+    "dayjs": "^1.11.9"
+  }
+}

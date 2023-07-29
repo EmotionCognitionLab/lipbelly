@@ -65,6 +65,20 @@ export default class ApiClient {
         return await this.doFetch(url, "put", "There was an error saving the emotional picture set.", pics);
     }
 
+    async getEmopics(used, count=0) {
+        let url =  `${awsSettings.EmopicsApiUrl}`;
+        if (used || count) url += '?'
+        if (used) url += 'used=1'
+        if (used && count) url += '&'
+        if (count) url += `count=${count}`
+        return await this.doFetch(url, "get", "There was an error getting the emotional pictures.");
+    }
+
+    async markEmopicsSkipped(pics) {
+        const url =  `${awsSettings.EmopicsApiUrl}/skip`;
+        return await this.doFetch(url, "post", "There was an error marking the emotional pictures skipped.", pics);
+    }
+
     /**
      * Updates the record of the logged-in user.
      * @param {object} updates An object with the fields you want to update and the values you want to set them to

@@ -4,6 +4,11 @@ const usersTable = process.env.USERS_TABLE;
 const emopicsTable = process.env.EMOPICS_TABLE;
 const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
 const docClient = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region});
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import Db from '../../../common/db/db.js';
 
 // For assignment to condition participants are asked their birth sex,
@@ -33,9 +38,25 @@ exports.handler = async (event) => {
     if (path === "/condition" && method === "POST") {
         return assignToCondition(event.requestContext.authorizer.jwt.claims.sub, JSON.parse(event.body));
     }
-    if (path === "/emopics") {
+    if (path.startsWith("/self/emopics")) {
         if (method === "PUT") {
             return await setEmopics(event.requestContext.authorizer.jwt.claims.sub, JSON.parse(event.body));
+        }
+        if (method === "GET") {
+            const used = event.queryStringParameters && event.queryStringParameters.used === "1";
+            const count = event.queryStringParameters && event.queryStringParameters.count ? parseInt(event.queryStringParameters.count) : undefined;
+            return await getEmopicsForUser(event.requestContext.authorizer.jwt.claims.sub, used, count);
+        }
+        if (method === "POST") {
+            const op = event.pathParameters.op;
+            if (op === "skip") {
+                return await markEmopicsSkippedForUser(event.requestContext.authorizer.jwt.claims.sub, JSON.parse(event.body));
+            } else if (op === "rate") {
+                console.log('emopics rating not yet implemented')
+                return errorResponse({statusCode: 501, message: "Rating emotional pictures not yet implemented."});
+            } else {
+                return errorResponse({statusCode: 400, message: `'${op}' is not a valid operation for POST /self/emopics.`});
+            }
         }
     }
     return errorResponse({statusCode: 400, message: `Unknown operation "${method} ${path}"`});
@@ -252,6 +273,71 @@ const setEmopics = async(userId, emopics) => {
             err = new HttpError(err.message);
         }
         return errorResponse(err);
+    }
+}
+
+const getEmopicsForUser = async (userId, used, count) => {
+    try {
+        const maxItems = count == undefined ? Number.MAX_SAFE_INTEGER : count;
+        let ExclusiveStartKey, dynResults
+        const allResults = [];
+
+        do {
+            const params = {
+                TableName: emopicsTable,
+                ExclusiveStartKey,
+                KeyConditionExpression: `userId = :uidKey`,
+                ExpressionAttributeValues: { ':uidKey': userId }
+            };
+            if (used) {
+                params['FilterExpression'] = "attribute_exists(#date)";
+                params['ExpressionAttributeNames'] = {"#date": 'date'};
+            }
+            dynResults = await docClient.query(params).promise();
+            ExclusiveStartKey = dynResults.LastEvaluatedKey;
+            allResults.push(...dynResults.Items.map(i => ({file: i.file, order: i.order})));
+        } while (dynResults.LastEvaluatedKey && allResults.length < maxItems)
+        
+        if (allResults.length > maxItems) return allResults.slice(0, maxItems);
+
+        return allResults;
+
+    } catch (err) {
+        console.error(err);
+        if (!(err instanceof HttpError)) {
+            err = new HttpError(err.message);
+        }
+        return errorResponse(err);
+    }
+}
+
+const markEmopicsSkippedForUser = async (userId, emopics) => {
+    let lastErr;
+
+    const fullDate = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]');
+    for (const p of emopics) {
+        const order = p.order; 
+        try {
+            const params = {
+                TableName: emopicsTable,
+                Key: { userId: userId, order: order },
+                UpdateExpression: 'set skipped = :true, #date = :date',
+                ExpressionAttributeNames: {'#date': date},
+                ExpressionAttributeValues: {':true': true, ':date': fullDate}
+            };
+            await docClient.update(params).promise();
+        } catch (err) {
+            console.error(`Failed to set skipped=true, date=${date} for emopic with userId ${userId}, order: ${order}.`, err);
+            lastErr = err;
+        }
+    }
+    if (lastErr) {
+        // This will just return the last error encountered;
+        // you'll have to look in the logs to find any others
+        if (!(lastErr instanceof HttpError)) {
+            lastErr = new HttpError(lastErr.message);
+        }
+        return errorResponse(lastErr);
     }
 }
 

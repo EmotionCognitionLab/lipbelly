@@ -87,12 +87,20 @@ functions:
   #         path: /self/earnings/{earningsType+}
   #         authorizer: serviceAuthorizer
       - httpApi:
-          method: POST
-          path: /condition
+          method: PUT
+          path: /self/emopics
           authorizer: serviceAuthorizer
       - httpApi:
-          method: PUT
-          path: /emopics
+          method: GET
+          path: /self/emopics
+          authorizer: serviceAuthorizer
+      - httpApi:
+          method: POST
+          path: /self/emopics/{op}
+          authorizer: serviceAuthorizer
+      - httpApi:
+          method: POST
+          path: /condition
           authorizer: serviceAuthorizer
     environment:
       EMOPICS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/emopics}
