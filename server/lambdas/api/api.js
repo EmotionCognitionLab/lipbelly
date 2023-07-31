@@ -4,11 +4,13 @@ const usersTable = process.env.USERS_TABLE;
 const emopicsTable = process.env.EMOPICS_TABLE;
 const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
 const docClient = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region});
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 import Db from '../../../common/db/db.js';
 
 // For assignment to condition participants are asked their birth sex,
@@ -52,8 +54,8 @@ exports.handler = async (event) => {
             if (op === "skip") {
                 return await markEmopicsSkippedForUser(event.requestContext.authorizer.jwt.claims.sub, JSON.parse(event.body));
             } else if (op === "rate") {
-                console.log('emopics rating not yet implemented')
-                return errorResponse({statusCode: 501, message: "Rating emotional pictures not yet implemented."});
+                const params = JSON.parse(event.body);
+                return await saveEmopicsRating(event.requestContext.authorizer.jwt.claims.sub, params.order, params.rating, params.rt, params.date);
             } else {
                 return errorResponse({statusCode: 400, message: `'${op}' is not a valid operation for POST /self/emopics.`});
             }
@@ -322,7 +324,7 @@ const markEmopicsSkippedForUser = async (userId, emopics) => {
                 TableName: emopicsTable,
                 Key: { userId: userId, order: order },
                 UpdateExpression: 'set skipped = :true, #date = :date',
-                ExpressionAttributeNames: {'#date': date},
+                ExpressionAttributeNames: {'#date': 'date'},
                 ExpressionAttributeValues: {':true': true, ':date': fullDate}
             };
             await docClient.update(params).promise();
@@ -338,6 +340,32 @@ const markEmopicsSkippedForUser = async (userId, emopics) => {
             lastErr = new HttpError(lastErr.message);
         }
         return errorResponse(lastErr);
+    }
+    return successResponse({msg: "Update successful"});
+}
+
+const saveEmopicsRating = async(userId, order, rating, responseTime, date) => {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 9) return errorResponse(new HttpError('Rating must be between 1 and 9', 400));
+    if (!Number.isInteger(order) || order < 0 || order > 83) return errorResponse(new HttpError('Order must be between 0 and 83', 400));
+    if (!Number.isInteger(responseTime) || responseTime <= 0) return errorResponse(new HttpError('Response time must be a number > 0', 400))
+    if (!dayjs.tz(date, 'YYYY-MM-DDTHH:mm:ssZ[Z]', 'America/Los_Angeles', true).isValid()) return errorResponse(new HttpError('You must provide a valid date', 400));
+
+    const params = {
+        TableName: emopicsTable,
+        Key: { userId: userId, order: order },
+        UpdateExpression: 'set rating = :rating, rt = :responseTime, #date = :date',
+        ExpressionAttributeNames: { '#date': 'date' },
+        ExpressionAttributeValues: { ':rating': rating, ':date': date, ':responseTime': responseTime }
+    };
+    try {
+        await docClient.update(params).promise();
+        return successResponse({msg: "Update successful"});
+    } catch (err) {
+        console.error(`Failed to set rating=${rating}, date=${date} for emopic with userId ${userId}, order: ${order}.`, err);
+        if (!(err instanceof HttpError)) {
+            err = new HttpError(err.message);
+        }
+        return errorResponse(err);
     }
 }
 

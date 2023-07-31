@@ -80,6 +80,20 @@ export default class ApiClient {
     }
 
     /**
+     * 
+     * @param {*} order The order of the emopic in the overall list of emopics. Must be 0 >= order <= 83.
+     * @param {*} rating The rating given to the picture. 1 >= rating <= 9.
+     * @param {*} responseTime The time (in ms) it took the participant to rate the image.
+     * @param {*} dateTime The date/time (in YYYY-MM-DDTHH:mm:ssZ[Z] format) the participant rated the image.
+     * @returns 
+     */
+    async saveEmopicsRating(order, rating, responseTime, dateTime) {
+        const url = `${awsSettings.EmopicsApiUrl}/rate`;
+        const body = {order: order, rating: rating, rt: responseTime, date: dateTime};
+        return await this.doFetch(url, "post", "There was an error saving an emotional picture rating", body);
+    }
+
+    /**
      * Updates the record of the logged-in user.
      * @param {object} updates An object with the fields you want to update and the values you want to set them to
      * @returns {object} DynamoDb.DocumentClient.update response. (https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#update-property)

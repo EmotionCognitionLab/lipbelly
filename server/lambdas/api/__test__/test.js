@@ -4,6 +4,13 @@ const path = require('path');
 require('dotenv').config({path: path.join(__dirname, './env.sh')});
 const th = require('../../common-test/test-helper.js');
 const lambdaLocal = require("lambda-local");
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+const customParseFormat = require('dayjs/plugin/customParseFormat');
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 const AWS = require('aws-sdk');
 const docClient = new AWS.DynamoDB.DocumentClient({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION})
 
@@ -381,6 +388,119 @@ describe("setting emotional pictures for a participant", () => {
         const comparablePics = storedPics.map(sp => { return {file: sp.file, group: sp.group} });
         expect(comparablePics).toEqual(pics);
 
+    });
+
+    afterAll(async () => {
+        await th.dynamo.deleteTable(process.env.EMOPICS_TABLE);
+    });
+});
+
+describe("saving emotional picture rating", () => {
+
+    const getGroup = () => Math.random() > 0.5 ? 'A' : 'B';
+
+    const pics = [];
+    const userId = 'ABC123';
+    for (let i=0; i<84; i++) {
+        pics.push({file: `${i}.jpg`, group: getGroup()})
+    }
+
+    const saveGeneratedPicsEvent = {
+        body: JSON.stringify(pics),
+        requestContext: {
+            authorizer: {jwt: {claims: {sub: userId}}}
+        }
+    };
+
+    const makeEvent = (order, rating, responseTime, date) => ({
+        body: JSON.stringify({order: order, rating: rating, rt: responseTime, date: date}),
+        pathParameters: { op: 'rate' },
+        requestContext: {
+            authorizer: {jwt: {claims: {sub: userId}}}
+        }
+    });
+
+    const now = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]')
+
+    beforeAll(async() => {
+        await th.dynamo.createTable(process.env.EMOPICS_TABLE, 
+            [{AttributeName: 'userId', KeyType: 'HASH'}, {AttributeName: 'order', KeyType: 'RANGE'}], 
+            [{AttributeName: 'userId', AttributeType: 'S'}, {AttributeName: 'order', AttributeType: 'N'}]
+        );
+        await runLambda('/self/emopics', 'PUT', saveGeneratedPicsEvent);
+    });
+
+    test("should require rating to be >= 1", async () => {
+        const event = makeEvent(1, 0, 322, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Rating must be between 1 and 9');
+    });
+
+    test("should require rating to be <= 9", async () => {
+        const event = makeEvent(1, 10, 322, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Rating must be between 1 and 9');
+    });
+
+    test("should require rating to be an integer", async () => {
+        const event = makeEvent(1, 'foo', 322, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Rating must be between 1 and 9');
+    });
+
+    test("should require order to be >= 0", async () => {
+        const event = makeEvent(-1, 5, 322, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Order must be between 0 and 83');
+    });
+
+    test("should require order to be <= 83", async () => {
+        const event = makeEvent(85, 5, 322, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Order must be between 0 and 83');
+    });
+
+    test("should require order to be an integer", async () => {
+        const event = makeEvent('foo', 5, 322, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Order must be between 0 and 83');
+    });
+
+    // requires https://github.com/iamkun/dayjs/issues/929 to be fixed
+    // and possibly a code change to the api to remove the .tz in the
+    // date validity check
+    test.skip("should require date to be in correct format", async () => {
+        const event = makeEvent(22, 5, 322, '2022');
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('You must provide a valid date');
+    });
+
+    test("should require response time to be a number", async () => {
+        const event = makeEvent(22, 5, 'really short', now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Response time must be a number > 0');
+    });
+
+    test("should require response time to be >0", async () => {
+        const event = makeEvent(22, 5, 0, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(400);
+        expect(result.body).toContain('Response time must be a number > 0');
+    });
+
+    test("should succeed when all parameters are valid", async () => {
+        const event = makeEvent(22, 5, 210, now);
+        const result = await runLambda('/self/emopics/rate', 'POST', event);
+        expect(result.statusCode).toBe(200);
+        expect(result.body).toContain('Update successful');
     });
 
     afterAll(async () => {
