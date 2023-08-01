@@ -65,7 +65,7 @@ export function generateEmotionalImages() {
 export async function emotionalImagesForSession(apiClient) {
     const usedPics = await apiClient.getEmopics(true);
     const todayDate = dayjs().tz('America/Los_Angeles').format('YYYY-MM-DD');
-    const usedToday = usedPics.filter(p => p.date.startsWith(todayDate));
+    const usedToday = usedPics.filter(p => p.date.startsWith(todayDate) && !p.skipped);
     const nextUnused = await apiClient.getEmopics(false, 11); // 11 is the max we could possible need for one session - 5 skipped and six new to display
     let result = [];
 

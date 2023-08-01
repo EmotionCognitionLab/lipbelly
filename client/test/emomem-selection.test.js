@@ -179,6 +179,27 @@ describe("Selecting emotional images for session", () => {
         }
     });
 
+    it("should not include images skipped today in the count of images done today", async () => {
+        const subId = 'ABC123';
+        const totalDone = 7;
+        const doneToday = 1;
+        const data = makeData(totalDone, doneToday, subId);
+        expect(data.length).toBe(19);
+        const skippedCount = 4;
+        const now =  dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]');
+        data.forEach((d, idx) => {
+            if (idx > 6 && idx <= 6 + skippedCount) {
+                d.skipped = true;
+                d.date = now;
+            }
+        });
+
+        const mockClient = new MockApiClient(subId, data);
+        const pics = await emotionalImagesForSession(mockClient);
+        expect(pics.length).toBe(6 - doneToday % 6);
+        expect(pics.every(p => !p.skipped)).toBeTruthy();
+    });
+
 });
 
 const testSelectEmotionalImagesForSession = async (totalDoneCount, doneTodayCount, expectedCount) => {
