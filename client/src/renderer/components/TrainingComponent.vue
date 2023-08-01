@@ -1,18 +1,17 @@
 <template>
     <div>
         <div id="emopics" v-if="!hasDoneEmoMem">
-            Once we've coded the emotional pictures, this is where they'll show up.
-            <button @click="hasDoneEmoMem=true">Continue</button>
+            <EmoMemComponent @finished="hasDoneEmoMem=true"/>
         </div>
         <div v-else>
             <div id="instructions" v-if="!instructionsRead">
-                Once we decide what we're doing with the instructions, they'll go here.
-                <div v-if="condition=='A'">
-
-                </div>
-                <div v-else>
-
-                </div>
+                Please make sure to:<br/>
+                <ul>
+                    <li>plug the USB ear sensor into the laptop</li>
+                    <li>attach the ear sensor to your earlobe</li>
+                    <li>sit in a comfortable position in a chair and be ready to start a session</li>
+                </ul>
+                <br/>
                 <button @click="instructionsRead=true">Continue</button>
             </div>
             <div id="breathing" v-if="instructionsRead">
@@ -42,6 +41,7 @@
     import { ref, onBeforeMount } from 'vue';
     import ApiClient from '../../../../common/api/client'
     import { SessionStore } from '../../session-store'
+    import EmoMemComponent from './EmoMemComponent.vue'
     import RestComponent from './RestComponent.vue'
     import UploadComponent from './UploadComponent.vue'
 
@@ -61,3 +61,9 @@
     })
 
 </script>
+<style scoped>
+    ul {
+        display: inline-block;
+        text-align:left;
+    }
+</style>

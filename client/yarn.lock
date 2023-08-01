@@ -3262,6 +3262,42 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jspsych/plugin-call-function@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@jspsych/plugin-call-function@npm:1.1.2"
+  peerDependencies:
+    jspsych: ">=7.1.0"
+  checksum: 4b704f393f0e54b43d111c842240872b3cca6ae4bf8e806b3665ef56e030d226c3888963bdaa52f552062c70774f3d540087866c3cada68d7288c93be0451118
+  languageName: node
+  linkType: hard
+
+"@jspsych/plugin-html-keyboard-response@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@jspsych/plugin-html-keyboard-response@npm:1.1.2"
+  peerDependencies:
+    jspsych: ">=7.1.0"
+  checksum: 319378514db998d57d70e287bd9432953bb742e4ce517b4360ae9bcc6a3d96f0a77599dbd5757415bf3d9ad1243e64d55c4b7c7886f3d6354acffa77f843f007
+  languageName: node
+  linkType: hard
+
+"@jspsych/plugin-image-keyboard-response@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@jspsych/plugin-image-keyboard-response@npm:1.1.2"
+  peerDependencies:
+    jspsych: ">=7.1.0"
+  checksum: 7067b964b414246e94647d1aa6c23d812f218a62e0a467cded4a4f747f7ded0554bd75b0cef19b6bf03490128ce8f296005d47b5530b680571f3eb90770506fe
+  languageName: node
+  linkType: hard
+
+"@jspsych/plugin-preload@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@jspsych/plugin-preload@npm:1.1.2"
+  peerDependencies:
+    jspsych: ">=7.1.0"
+  checksum: 2340a4d6de5d05979748fbb8d46cb311beded38aaf62e40b583ba4d9f8ccd66e5d9783ec4651d20b664fc2d61d8a5d45c3c1ab1a528be18d9c6d371dea10bc2c
+  languageName: node
+  linkType: hard
+
 "@leichtgewicht/ip-codec@npm:^2.0.1":
   version: 2.0.4
   resolution: "@leichtgewicht/ip-codec@npm:2.0.4"
@@ -6839,6 +6875,10 @@ __metadata:
     "@babel/eslint-parser": ^7.22.5
     "@babel/plugin-transform-optional-chaining": ^7.22.5
     "@babel/plugin-transform-runtime": ^7.22.5
+    "@jspsych/plugin-call-function": ^1.1.2
+    "@jspsych/plugin-html-keyboard-response": ^1.1.2
+    "@jspsych/plugin-image-keyboard-response": ^1.1.2
+    "@jspsych/plugin-preload": ^1.1.2
     "@vue/cli-plugin-babel": ^5.0.8
     "@vue/cli-service": ^5.0.8
     CBuffer: ^2.2.0
