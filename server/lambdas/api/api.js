@@ -299,7 +299,7 @@ const getEmopicsForUser = async (userId, used, count) => {
             }
             dynResults = await docClient.query(params).promise();
             ExclusiveStartKey = dynResults.LastEvaluatedKey;
-            allResults.push(...dynResults.Items.map(i => ({file: i.file, order: i.order, date: i.date})));
+            allResults.push(...dynResults.Items.map(i => ({file: i.file, order: i.order, date: i.date, skipped: i.skipped})));
         } while (dynResults.LastEvaluatedKey && allResults.length < maxItems)
         
         if (allResults.length > maxItems) return allResults.slice(0, maxItems);
