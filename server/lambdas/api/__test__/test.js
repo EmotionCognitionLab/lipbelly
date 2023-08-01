@@ -344,6 +344,22 @@ describe("assignment to condition tested with many users", () => {
     });
 });
 
+function makeSetEmopicsEvent(userId) {
+    const getGroup = () => Math.random() > 0.5 ? 'A' : 'B';
+
+    const pics = [];
+    for (let i=0; i<84; i++) {
+        pics.push({file: `${i}.jpg`, group: getGroup()})
+    }
+
+    return {
+        body: JSON.stringify(pics),
+        requestContext: {
+            authorizer: {jwt: {claims: {sub: userId}}}
+        }
+    };
+}
+
 describe("setting emotional pictures for a participant", () => {
     beforeAll(async() => {
         await th.dynamo.createTable(process.env.EMOPICS_TABLE, 
@@ -365,20 +381,11 @@ describe("setting emotional pictures for a participant", () => {
     });
 
     test("should save the pictures in the order provided", async () => {
-        const getGroup = () => Math.random() > 0.5 ? 'A' : 'B';
-
-        const pics = [];
         const userId = 'ABC123';
-        for (let i=0; i<84; i++) {
-            pics.push({file: `${i}.jpg`, group: getGroup()})
-        }
+        
 
-        const event = {
-            body: JSON.stringify(pics),
-            requestContext: {
-                authorizer: {jwt: {claims: {sub: userId}}}
-            }
-        };
+        const event = makeSetEmopicsEvent(userId);
+        const pics = JSON.parse(event.body);
 
         const result = await runLambda('/self/emopics', 'PUT', event);
         expect(result.statusCode).toBe(200);
@@ -395,22 +402,72 @@ describe("setting emotional pictures for a participant", () => {
     });
 });
 
-describe("saving emotional picture rating", () => {
-
-    const getGroup = () => Math.random() > 0.5 ? 'A' : 'B';
-
-    const pics = [];
+describe("getting emotional pictures for a participant", () => {
     const userId = 'ABC123';
-    for (let i=0; i<84; i++) {
-        pics.push({file: `${i}.jpg`, group: getGroup()})
-    }
 
-    const saveGeneratedPicsEvent = {
-        body: JSON.stringify(pics),
-        requestContext: {
-            authorizer: {jwt: {claims: {sub: userId}}}
+    beforeAll(async() => {
+        await th.dynamo.createTable(process.env.EMOPICS_TABLE, 
+            [{AttributeName: 'userId', KeyType: 'HASH'}, {AttributeName: 'order', KeyType: 'RANGE'}], 
+            [{AttributeName: 'userId', AttributeType: 'S'}, {AttributeName: 'order', AttributeType: 'N'}]
+        );
+        const saveGeneratedPicsEvent = makeSetEmopicsEvent(userId);
+        await runLambda('/self/emopics', 'PUT', saveGeneratedPicsEvent);
+
+        // set dates on some of the pictures
+        for (let i=0; i<3; i++) {
+            const params = {
+                TableName: process.env.EMOPICS_TABLE,
+                Key: { userId: userId, order: i },
+                UpdateExpression: 'set #date = :date',
+                ExpressionAttributeNames: { '#date': 'date' },
+                ExpressionAttributeValues: { ':date': dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]') }
+            };
+
+            await docClient.update(params).promise();
+        }
+    });
+
+    const makeEvent = (used, count) => {
+        const query = {};
+        if (used) query['used'] = "1";
+        if (count) query['count'] = count;
+        return {
+            queryStringParameters: query,
+            requestContext: {
+                authorizer: {jwt: {claims: {sub: userId}}}
+            }
         }
     };
+
+    it("should only include pictures with a date when getting used pictures", async () => {
+        const event = makeEvent(true, undefined);
+        const result = await runLambda('/self/emopics', 'GET', event);
+        expect(result.length).toBeGreaterThan(0);
+        expect(result.every(e => e.date)).toBeTruthy();
+    });
+
+    it("should not include pictures with a date when getting unused pictures", async () => {
+        const event = makeEvent(false, undefined);
+        const result = await runLambda('/self/emopics', 'GET', event);
+        expect(result.length).toBeGreaterThan(0);
+        expect(result.every(e => !e.date)).toBeTruthy();
+    });
+
+    it("should return no more than the requested number of pictures", async () => {
+        const event = makeEvent(false, 11);
+        const result = await runLambda('/self/emopics', 'GET', event);
+        expect(result.length).toBe(11);
+    });
+
+    afterAll(async () => {
+        await th.dynamo.deleteTable(process.env.EMOPICS_TABLE);
+    });
+});
+
+describe("saving emotional picture rating", () => {
+    const userId = 'ABC123';
+
+    const saveGeneratedPicsEvent = makeSetEmopicsEvent(userId);
 
     const makeEvent = (order, rating, responseTime, date) => ({
         body: JSON.stringify({order: order, rating: rating, rt: responseTime, date: date}),

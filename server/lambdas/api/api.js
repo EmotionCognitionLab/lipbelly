@@ -289,11 +289,13 @@ const getEmopicsForUser = async (userId, used, count) => {
                 TableName: emopicsTable,
                 ExclusiveStartKey,
                 KeyConditionExpression: `userId = :uidKey`,
-                ExpressionAttributeValues: { ':uidKey': userId }
+                ExpressionAttributeValues: { ':uidKey': userId },
+                ExpressionAttributeNames: {"#date": 'date'}
             };
             if (used) {
                 params['FilterExpression'] = "attribute_exists(#date)";
-                params['ExpressionAttributeNames'] = {"#date": 'date'};
+            } else {
+                params['FilterExpression'] = "attribute_not_exists(#date)";
             }
             dynResults = await docClient.query(params).promise();
             ExclusiveStartKey = dynResults.LastEvaluatedKey;
