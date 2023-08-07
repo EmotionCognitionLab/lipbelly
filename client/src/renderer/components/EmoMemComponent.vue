@@ -1,6 +1,16 @@
 <template>
-    <div id="experiment">
-        
+    <div>
+        <div class="instruction" id="instructions" v-if="emoPics.length > 0 && !instructionsRead">
+            <p>
+            Before each meditation practice, you will view 6 images presented one at a time. You will be asked to rate on a scale of 1 to 9 how negative, neutral, or positive you find each picture (1=very negative, 5=neutral, 9=very positive). There are no correct answers; we want to know how these pictures make people feel.
+
+            NOTE: This task involves viewing and labeling emotional pictures, both pleasant and unpleasant. The emotions typically evoked by the pictures include disgust, fear, contentment and amusement.
+            </p>
+            <button @click="initExperiment">Continue</button>
+        </div>
+        <div id="experiment" :class="{hidden: !instructionsRead}">
+            
+        </div>
     </div>
 </template>
 <script setup>
@@ -9,7 +19,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 dayjs.extend(utc)
 dayjs.extend(timezone)
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import {initJsPsych} from 'jspsych'
 import jsPsychCallFunction from '@jspsych/plugin-call-function'
 import jsPsychPreload from '@jspsych/plugin-preload'
@@ -21,9 +31,19 @@ import ApiClient from '../../../../common/api/client'
 import { emotionalImagesForSession } from '../../emomem-selection'
 
 const emit = defineEmits(['finished'])
+const instructionsRead = ref(false)
+const emoPics = ref([])
+let apiClient
 let jsPsych
 
 onMounted(async () => {
+    const session = await SessionStore.getRendererSession()
+    apiClient = new ApiClient(session)
+    emoPics.value = await emotionalImagesForSession(apiClient)
+    if (emoPics.value.length == 0) emit('finished')
+})
+
+async function initExperiment() {
     jsPsych = initJsPsych({display_element: 'experiment'})
     const timeline = await buildTimeline()
     if (timeline.length == 0) {
@@ -31,7 +51,8 @@ onMounted(async () => {
     } else {
         jsPsych.run(timeline)
     }
-})
+    instructionsRead.value = true
+}
 
 async function saveRatingWithRetry(apiClient, data, doneCallback) {
     const rating = parseInt(data.response)
@@ -60,16 +81,9 @@ async function saveRatingWithRetry(apiClient, data, doneCallback) {
 }
 
 async function buildTimeline() {
-    const session = await SessionStore.getRendererSession()
-    const apiClient = new ApiClient(session)
-    const emoPics = await emotionalImagesForSession(apiClient)
-    if (emoPics.length == 0) {
-        return [];
-    }
-
     const preload = {
         type: jsPsychPreload,
-        images: emoPics.map(p => p.url)
+        images: emoPics.value.map(p => p.url)
     }
 
     const imgTrial = {
@@ -97,10 +111,15 @@ async function buildTimeline() {
                 func: function(done){saveRatingWithRetry(apiClient, jsPsych.data.getLastTrialData().trials[0], done)}
             }
         ],
-        timeline_variables: emoPics,
+        timeline_variables: emoPics.value,
         on_timeline_finish: function() { emit("finished") }
     }
 
     return [preload, imgTrial]
 }
 </script>
+<style scope>
+    .hidden {
+        visibility: hidden;
+    }
+</style>
