@@ -184,6 +184,7 @@ app.on('ready', async () => {
 
 app.on('before-quit', () => {
   emwave.stopEmWave()
+  closeBreathDb()
 })
 
 
@@ -276,6 +277,10 @@ ipcMain.on('set-key-value', (event, key, value) => {
 ipcMain.handle('set-stage', async(_event, stage) => {
   emwave.setStage(stage)
 })
+
+ipcMain.handle('quit', () => {
+  app.quit();
+});
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {

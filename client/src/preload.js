@@ -15,5 +15,6 @@ contextBridge.exposeInMainWorld('mainAPI', {
     getPacedBreathingDays: async (stage) => await ipcRenderer.invoke('get-paced-breathing-days', stage),
     getKeyValue: async (key) => await ipcRenderer.invoke('get-key-value', key),
     setKeyValue: (key, value) => ipcRenderer.send('set-key-value', key, value),
-    setStage: (stage) => ipcRenderer.invoke('set-stage', stage)
+    setStage: (stage) => ipcRenderer.invoke('set-stage', stage),
+    quit: () => ipcRenderer.invoke('quit')
 })
