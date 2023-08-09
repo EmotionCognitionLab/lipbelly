@@ -60,6 +60,10 @@
 
     })
 
+    function quit() {
+        window.mainAPI.quit()
+    }
+
 </script>
 <style scoped>
     ul {
