@@ -309,8 +309,8 @@ resource "aws_iam_policy" "s3-write-experiment-data" {
         "s3:PutObject"
       ],
       "Resource": [
-        "arn:aws:s3:::${var.data-bucket}/$${cognito-identity.amazonaws.com:sub}",
-        "arn:aws:s3:::${var.data-bucket}/$${cognito-identity.amazonaws.com:sub}/*"
+        "arn:aws:s3:::${var.data-bucket}/*/$${cognito-identity.amazonaws.com:sub}",
+        "arn:aws:s3:::${var.data-bucket}/*/$${cognito-identity.amazonaws.com:sub}/*"
       ]
     }
   ]

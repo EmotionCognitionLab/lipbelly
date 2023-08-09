@@ -6,9 +6,9 @@ import awsSettings from '../../common/aws-settings.json'
 
 let session;
 
-function getDefaultS3Target(subId, fileName) {
+function getDefaultS3Target(subId, identityId, fileName) {
     const userDataBucket = awsSettings.UserDataBucket;
-    return { bucket: userDataBucket, key: `${subId}/${fileName}`}
+    return { bucket: userDataBucket, key: `${subId}/${identityId}/${fileName}`}
 }
 
 function getIdToken() {
@@ -106,10 +106,11 @@ export default {
     async uploadFile(authSession, localFileSrc, s3Dest) {
         session = authSession;
         const identityId = await getUserId();
+        const subId = (session.getIdToken().decodePayload())['sub']
         let bucket, key;
         if (!s3Dest || !s3Dest.hasOwn('bucket') || !s3Dest.hasOwn('key')) {
             const pathParts = parse(localFileSrc);
-            ({bucket, key} = getDefaultS3Target(identityId, pathParts.base));
+            ({bucket, key} = getDefaultS3Target(subId, identityId, pathParts.base));
         } else {
             bucket = s3Dest.bucket;
             key = s3Dest.key;
