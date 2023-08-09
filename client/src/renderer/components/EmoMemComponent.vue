@@ -29,7 +29,6 @@ import 'jspsych/css/jspsych.css'
 import { SessionStore } from '../../session-store'
 import ApiClient from '../../../../common/api/client'
 import { emotionalImagesForSession } from '../../emomem-selection'
-import awsSettings from '../../../../common/aws-settings.json'
 
 const emit = defineEmits(['finished'])
 const instructionsRead = ref(false)
@@ -99,7 +98,7 @@ async function buildTimeline() {
             },
             {
                 type: jsPsychHtmlKeyboardResponse,
-                stimulus: `Please rate the image you just saw on a 1 to 9 scale.<br/><img src="${awsSettings.ImagesUrl}/assets/emopic-scale.png" />`,
+                stimulus: `<p class="instruction vertical-middle">Please press a number key to rate the picture you just saw on a scale of 1 to 9, where 1 is very negative, 5 is neutral, and 9 is very positive. </p><br/>`,
                 choices: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
                 data: { 
                     image: jsPsych.timelineVariable('url'),
@@ -122,5 +121,11 @@ async function buildTimeline() {
 <style scope>
     .hidden {
         visibility: hidden;
+    }
+    .vertical-middle {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 800px;
     }
 </style>
