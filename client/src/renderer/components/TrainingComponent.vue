@@ -14,13 +14,8 @@
                 <br/>
                 <button @click="instructionsRead=true">Continue</button>
             </div>
-            <div id="breathing" v-if="instructionsRead">
-                <div v-if="condition=='A' && !breathingDone">
-                    <RestComponent :secondsDuration=1200 @timerFinished="breathingDone=true" />
-                </div>
-                <div v-else-if="condition=='B' && !breathingDone">
-                    <RestComponent :secondsDuration=1200 @timerFinished="breathingDone=true" />
-                </div>
+            <div id="breathing" v-if="instructionsRead && !breathingDone">
+                <RestComponent :totalDurationSeconds=1200 :segmentDurationSeconds=600 @timerFinished="breathingDone=true" />
             </div>
             <div id="upload" v-if="breathingDone">
                 <UploadComponent>

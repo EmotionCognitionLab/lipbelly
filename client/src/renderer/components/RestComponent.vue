@@ -6,7 +6,7 @@
         </slot>
         <EmWaveListener :showIbi=false @pulseSensorCalibrated="startTimer" @pulseSensorStopped="sensorStopped" @pulseSensorSignalLost="sensorStopped" @pulseSensorSignalRestored="startTimer" @pulseSensorSessionEnded="resetTimer" ref="emwaveListener"/> 
         <br/>
-        <TimerComponent :secondsDuration=secondsDuration :showButtons=false @timerFinished="stopSession" ref="timer" />
+        <TimerComponent :secondsDuration=totalDurationSeconds :showButtons=false @timerFinished="stopSession" ref="timer" />
     </div>
     <div class="instruction" v-else>
         <slot name="postText">
@@ -17,20 +17,33 @@
     </div>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import EmWaveListener from './EmWaveListener.vue'
 import TimerComponent from './TimerComponent.vue'
+import { CountdownTimer } from '../../countdown-timer'
 
-defineProps(['secondsDuration'])
+const props = defineProps({totalDurationSeconds: Number, segmentDurationSeconds: { type: Number, default: -1 }})
 const emwaveListener = ref(null)
 const timer = ref(null)
 const done = ref(false)
 const emit = defineEmits(['timer-finished'])
 let timerDone = false
+let segmentTimer = null
+let remainingSegmentCount = 0
+
+onMounted(() => {
+    if (props.segmentDurationSeconds > 0) {
+        remainingSegmentCount = Math.floor((props.totalDurationSeconds / props.segmentDurationSeconds)) - 1 // -1 because we already save the average coherence when the total time runs out
+        if (remainingSegmentCount > 0) {
+            segmentTimer = new CountdownTimer(props.segmentDurationSeconds)
+            segmentTimer.subscribe(saveSegmentAverageCoherence)
+        } 
+    }
+})
 
 async function startTimer() {
     timer.value.running = true
-    await window.mainAPI.disableMenus()
+    if (segmentTimer) segmentTimer.start()
 }
 
 function sensorStopped() {
@@ -42,15 +55,27 @@ function sensorStopped() {
         done.value = true
     }
     timer.value.running = false
+    if (segmentTimer) segmentTimer.stop()
 }
 
 function resetTimer() {
     timer.value.reset()
+    if (segmentTimer) segmentTimer.reset()
 }
 
 function stopSession() {
     timerDone = true
     emwaveListener.value.stopSensor = true
+    if (segmentTimer) segmentTimer.stop()
+}
+
+function saveSegmentAverageCoherence() {
+    window.mainAPI.notifyAverageCoherence()
+    remainingSegmentCount -= 1
+    if (remainingSegmentCount > 0) {
+        segmentTimer.reset()
+        segmentTimer.start()
+    }
 }
 
 function quit() {

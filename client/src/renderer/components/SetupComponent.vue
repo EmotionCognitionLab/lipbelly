@@ -4,7 +4,7 @@
             One moment while we load your data...
         </div>
         <div v-else-if="step==1">
-            <RestComponent :secondsDuration=300 @timerFinished="timerFinished">
+            <RestComponent :totalDurationSeconds=300 @timerFinished="timerFinished">
                 <template #preText>
                     <div class="instruction">
                         Thank you. Next, we would like to get baseline measurements of your heart rate for five minutes while you rest.
