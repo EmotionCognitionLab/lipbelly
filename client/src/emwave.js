@@ -163,9 +163,9 @@ export default {
 
     async hideEmWave() {
         const hideScript = process.env.NODE_ENV === 'production' ? path.join(path.dirname(app.getPath('exe')), 'hide-emwave.ps1') : path.join(app.getAppPath(), '../src/powershell/hide-emwave.ps1')
-        console.log('process.platform', process.platform)
-        console.log('hideScript', hideScript)
-        console.log('emWavePid', emWavePid)
+        logger.log('process.platform', process.platform)
+        logger.log('hideScript', hideScript)
+        logger.log('emWavePid', emWavePid)
         if (process.platform === 'win32' && emWavePid) {
             await spawn('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', [hideScript, emWavePid], {stdio:'inherit'});
         }
