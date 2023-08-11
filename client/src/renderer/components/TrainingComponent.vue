@@ -15,7 +15,7 @@
                 <button @click="instructionsRead=true">Continue</button>
             </div>
             <div id="breathing" v-if="instructionsRead && !breathingDone">
-                <RestComponent :totalDurationSeconds=1200 :segmentDurationSeconds=600 @timerFinished="breathingDone=true" />
+                <RestComponent :totalDurationSeconds=1200 :segmentDurationSeconds=600 @timerFinished="sessionDone()" />
             </div>
             <div id="upload" v-if="breathingDone">
                 <UploadComponent>
@@ -23,7 +23,7 @@
                         <div class="instruction">Terrific! Please wait while we upload your data...</div>
                     </template>
                     <template #postUploadText>
-                            <div class="instruction">Upload complete. You're all done for today! Please come back tomorrow for more training.</div>
+                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < 3 ? 'later today' :'tomorrow' }} for more practice.</div>
                         <br/>
                         <button class="button" @click="quit">Quit</button>
                     </template>
@@ -44,9 +44,10 @@
     const condition = ref(null)
     const instructionsRead = ref(false)
     const breathingDone = ref(false)
+    const todaySegCount = ref(0)
+    const stage = 2
 
     onBeforeMount(async() => {
-        const stage = 2
         await window.mainAPI.setStage(stage)
 
         const session = await SessionStore.getRendererSession()
@@ -54,11 +55,21 @@
         const data = await apiClient.getSelf()
         condition.value = data.condition.assigned
 
-        const todayStart = new Date();
+        await countTodaySegs()
+        breathingDone.value = todaySegCount.value >= 3
+    })
+
+    async function countTodaySegs() {
+        const todayStart = new Date()
         todayStart.setHours(0); todayStart.setMinutes(0); todayStart.setSeconds(0);
         const todaySegs = await window.mainAPI.getSegmentsAfterDate(todayStart, stage)
-        breathingDone.value = todaySegs.length >= 3
-    })
+        todaySegCount.value = todaySegs.length
+    }
+
+    async function sessionDone() {
+        await countTodaySegs()
+        breathingDone.value = true
+    }
 
     function quit() {
         window.mainAPI.quit()
