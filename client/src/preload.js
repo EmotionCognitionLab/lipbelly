@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('mainAPI', {
     uploadEmWaveData: async(session) => ipcRenderer.invoke('upload-emwave-data', session),
     uploadBreathData: async(session) => ipcRenderer.invoke('upload-breath-data', session),
     pacerRegimeChanged: async (startTime, regime) => await ipcRenderer.invoke('pacer-regime-changed', startTime, regime),
+    notifyAverageCoherence: () => ipcRenderer.send('notify-average-coherence'),
     getRestBreathingDays: async (stage) => await ipcRenderer.invoke('get-rest-breathing-days', stage),
     getPacedBreathingDays: async (stage) => await ipcRenderer.invoke('get-paced-breathing-days', stage),
     getKeyValue: async (key) => await ipcRenderer.invoke('get-key-value', key),

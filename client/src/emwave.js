@@ -60,9 +60,13 @@ ipcMain.handle('pacer-regime-changed', (_event, sessionStartTime, regime) => {
     curSegmentStartMsOffset = sessionStartTime;
 });
 
+ipcMain.on('notify-average-coherence', () => {
+    notifyAvgCoherence();
+});
+
 ipcMain.on('current-user', (_event, user) => {
     logger.user = user
-})
+});
 
 function notifyAvgCoherence() {
     try {
