@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('mainAPI', {
     notifyAverageCoherence: () => ipcRenderer.send('notify-average-coherence'),
     getRestBreathingDays: async (stage) => await ipcRenderer.invoke('get-rest-breathing-days', stage),
     getPacedBreathingDays: async (stage) => await ipcRenderer.invoke('get-paced-breathing-days', stage),
+    getSegmentsAfterDate: async (date, stage) => await ipcRenderer.invoke('get-segments-after-date', date, stage),
     getKeyValue: async (key) => await ipcRenderer.invoke('get-key-value', key),
     setKeyValue: (key, value) => ipcRenderer.send('set-key-value', key, value),
     setStage: (stage) => ipcRenderer.invoke('set-stage', stage),

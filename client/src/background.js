@@ -6,7 +6,7 @@ import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
 const AmazonCognitoIdentity = require('amazon-cognito-auth-js')
 import awsSettings from '../../common/aws-settings.json'
-import { breathDbPath, closeBreathDb, getKeyValue, setKeyValue, getRestBreathingDays, getPacedBreathingDays } from './breath-data'
+import { breathDbPath, closeBreathDb, getKeyValue, setKeyValue, getRestBreathingDays, getPacedBreathingDays, getSegmentsAfterDate } from './breath-data'
 import { emWaveDbPath, deleteShortSessions as deleteShortEmwaveSessions } from './emwave-data'
 import emwave from './emwave'
 import { SessionStore } from './session-store.js'
@@ -264,6 +264,10 @@ ipcMain.handle('get-rest-breathing-days', (_event, stage) => {
 
 ipcMain.handle('get-paced-breathing-days', (_event, stage) => {
   return getPacedBreathingDays(stage)
+})
+
+ipcMain.handle('get-segments-after-date', (_event, date, stage) => {
+  return getSegmentsAfterDate(date, stage)
 })
 
 ipcMain.handle('get-key-value', (event, key) => {
