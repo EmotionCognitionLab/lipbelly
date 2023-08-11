@@ -34,14 +34,11 @@
 </template>
 <script setup>
     import { ref, onBeforeMount } from 'vue';
-    import ApiClient from '../../../../common/api/client'
-    import { SessionStore } from '../../session-store'
     import EmoMemComponent from './EmoMemComponent.vue'
     import RestComponent from './RestComponent.vue'
     import UploadComponent from './UploadComponent.vue'
 
     const hasDoneEmoMem = ref(false)
-    const condition = ref(null)
     const instructionsRead = ref(false)
     const breathingDone = ref(false)
     const todaySegCount = ref(0)
@@ -49,12 +46,6 @@
 
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
-
-        const session = await SessionStore.getRendererSession()
-        const apiClient = new ApiClient(session)
-        const data = await apiClient.getSelf()
-        condition.value = data.condition.assigned
-
         await countTodaySegs()
         breathingDone.value = todaySegCount.value >= 3
     })
