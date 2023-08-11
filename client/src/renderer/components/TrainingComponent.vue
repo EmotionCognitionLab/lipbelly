@@ -4,7 +4,7 @@
             <EmoMemComponent @finished="hasDoneEmoMem=true"/>
         </div>
         <div v-else>
-            <div id="instructions" v-if="!instructionsRead">
+            <div id="instructions" v-if="!instructionsRead && !breathingDone">
                 Please make sure to:<br/>
                 <ul>
                     <li>plug the USB ear sensor into the laptop</li>
@@ -46,13 +46,18 @@
     const breathingDone = ref(false)
 
     onBeforeMount(async() => {
-        await window.mainAPI.setStage(2)
+        const stage = 2
+        await window.mainAPI.setStage(stage)
 
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
         const data = await apiClient.getSelf()
         condition.value = data.condition.assigned
 
+        const todayStart = new Date();
+        todayStart.setHours(0); todayStart.setMinutes(0); todayStart.setSeconds(0);
+        const todaySegs = await window.mainAPI.getSegmentsAfterDate(todayStart, stage)
+        breathingDone.value = todaySegs.length >= 3
     })
 
     function quit() {
