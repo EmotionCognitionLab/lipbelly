@@ -6,11 +6,10 @@ const th = require('../../common-test/test-helper.js');
 import { readFile, mkdtemp, unlink } from 'fs/promises';
 const os = require('os');
 const lambdaLocal = require("lambda-local");
-const AWS = require('aws-sdk');
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb'
 
-const s3Client = new AWS.S3({endpoint: process.env.S3_ENDPOINT, apiVersion: '2006-03-01',
-    s3ForcePathStyle: true});
-const docClient = new AWS.DynamoDB.DocumentClient({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION});
+const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION}));
 const Database = require('better-sqlite3');
 
 const theUserId = 'RedInfo';
@@ -130,10 +129,10 @@ function getSqliteRows(db, lastUploadTime, isRest) {
 }
 
 async function getDynamoRows(userId, lastUploadTime, isRest) {
-    const userQueryRes = await docClient.scan({
+    const userQueryRes = await docClient.send(new ScanCommand({
         TableName: segmentsTable, 
         FilterExpression: "userId = :userId and endDateTime > :lut and isRest = :ir",
         ExpressionAttributeValues: {":userId": userId, ":lut": lastUploadTime, ":ir": isRest},
-    }).promise();
+    }));
     return userQueryRes.Items;
 }

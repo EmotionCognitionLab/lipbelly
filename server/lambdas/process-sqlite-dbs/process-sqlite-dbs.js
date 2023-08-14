@@ -1,29 +1,32 @@
 "use strict";
 
-const AWS = require('aws-sdk');
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
+import { DynamoDBDocumentClient, QueryCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb'
 import Database from 'better-sqlite3';
 import { mkdtemp, rm, writeFile } from 'fs/promises';
 const path = require('path');
 
-const s3 = new AWS.S3({
+const s3 = new S3Client({
   apiVersion: '2006-03-01',
   region: process.env.AWSREGION,
   endpoint: process.env.S3_ENDPOINT,
-  s3ForcePathStyle: true
+  forcePathStyle: true
 });
 
 const region = process.env.REGION;
 const segmentsTable = process.env.SEGMENTS_TABLE;
 const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
-const docClient = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region});
+const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region}));
 
 export async function savesegments(event) {
     const record = event.Records[0];
     // Retrieve the database
-    const request = {
+    const getObjCmdInput = {
         Bucket: record.s3.bucket.name,
         Key: decodeURIComponent(record.s3.object.key),
     };
+    const getObjCmd = new GetObjectCommand(getObjCmdInput);
     let tmpDir;
     let db;
   
@@ -31,11 +34,11 @@ export async function savesegments(event) {
         // retrieve sqlite file from s3
         tmpDir = await mkdtemp('/tmp/');
         const dbPath = path.join(tmpDir, 'temp.sqlite');
-        const data = await s3.getObject(request).promise();
+        const data = await s3.send(getObjCmd);
         await writeFile(dbPath, data.Body);
 
         // check to see which segments we need from it
-        const userId = request.Key.split('/')[0];
+        const userId = getObjCmdInput.Key.split('/')[0];
         const lastUploadTime = await lastUploadedSegmentTime(userId, false);
 
         // get those segments from the sqlite db
@@ -58,7 +61,7 @@ export async function savesegments(event) {
 
         return {status: "success"};
     } catch (err) {
-        console.error(`Error trying to process sqlite db (s3 key: ${request.Key}).`)
+        console.error(`Error trying to process sqlite db (s3 key: ${getObjCmdInput.Key}).`)
         console.error(err, err.stack);
         return {status: "error", message: err.message}
     } finally {
@@ -76,15 +79,15 @@ export async function savesegments(event) {
 }
 
 async function lastUploadedSegmentTime(userId, isRest) {
-    const baseParams = {
+    const baseParams = new QueryCommand({
         TableName: segmentsTable,
         KeyConditionExpression: "userId = :userId",
         FilterExpression: "isRest = :ir",
         ScanIndexForward: false,
         Limit: 1,
         ExpressionAttributeValues: { ":userId": userId, ":ir": isRest },
-    };
-    const dynResults = await docClient.query(baseParams).promise();
+    });
+    const dynResults = await docClient.send(baseParams);
     if (dynResults.Items.length === 0) return 0;
   
     return dynResults.Items[0].endDateTime;
@@ -115,6 +118,6 @@ async function writeSegments(userId, rows, isRest) {
         const chunk = chunks[i];
         const params = { RequestItems: {} };
         params['RequestItems'][segmentsTable] = chunk;
-        await docClient.batchWrite(params).promise();
+        await docClient.send(new BatchWriteCommand(params));
     }
 }
