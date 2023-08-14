@@ -173,14 +173,14 @@ resource "aws_dynamodb_table" "consent-table" {
 resource "aws_dynamodb_table" "segments-table" {
   name           = "lb-${var.env}-segments"
   billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "humanId"
+  hash_key       = "userId"
   range_key = "endDateTime"
   point_in_time_recovery {
     enabled = "${terraform.workspace == "prod" ? true : false}"
   }
 
   attribute {
-    name = "humanId"
+    name = "userId"
     type = "S"
   }
 
