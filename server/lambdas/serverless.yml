@@ -385,17 +385,17 @@ functions:
       patterns:
         - 'register/*.js'
 
-# layers:
-#   BetterSqlite3:
-#     path: 'better-sqlite3-layer/layer'
-#     package:
-#       patterns:
-#         - './**'
-#     description: Provides better-sqlite3 for nodejs-based Lambda functions
-#     compatibleRuntimes:
-#       - nodejs14.x
-#     allowedAccounts:
-#       - ${aws:accountId}
+layers:
+  BetterSqlite3:
+    path: 'better-sqlite3-layer/layer'
+    package:
+      patterns:
+        - './**'
+    description: Provides better-sqlite3 for nodejs-based Lambda functions
+    compatibleRuntimes:
+      - nodejs18.x
+    allowedAccounts:
+      - ${aws:accountId}
 
 resources:
   Resources:
