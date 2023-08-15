@@ -27,28 +27,28 @@ plugins:
   - serverless-webpack
 
 functions:
-  # process-sqlite-dbs:
-  #   handler: process-sqlite-dbs/process-sqlite-dbs.savesegments
-  #   events:
-  #     - s3:
-  #         bucket: ${self:service}-${self:provider.stage}-usr-data
-  #         event: s3:ObjectCreated:*
-  #         rules:
-  #           - suffix: .sqlite
-  #         existing: true
-  #   environment:
-  #     S3_ENDPOINT: "https://s3.us-west-2.amazonaws.com"
-  #     SEGMENTS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/segments}
-  #   layers:
-  #     # - !Ref BetterSqlite3LambdaLayer
-  #     # - arn:aws:lambda:${self:provider.region}:${aws:accountId}:layer:BetterSqlite3:4
-  #     - arn:aws:lambda:${self:provider.region}:${aws:accountId}:layer:BetterSqlite3:8
-  #   role: ${ssm:/${self:service}/${self:provider.stage}/role/lambda/sqlite/process}
-  #   package:
-  #     patterns:
-  #       - 'process-sqlite-dbs/package*.json'
-  #       - 'process-sqlite-dbs/node_modules/**'
-  #       - 'process-sqlite-dbs/*.js'
+  process-sqlite-dbs:
+    handler: process-sqlite-dbs/process-sqlite-dbs.savesegments
+    events:
+      - s3:
+          bucket: ${self:service}-${self:provider.stage}-usr-data
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .sqlite
+          existing: true
+    environment:
+      S3_ENDPOINT: "https://s3.us-west-2.amazonaws.com"
+      SEGMENTS_TABLE: ${ssm:/${self:service}/${self:provider.stage}/info/dynamo/table/segments}
+    layers:
+      # - !Ref BetterSqlite3LambdaLayer
+      # - arn:aws:lambda:${self:provider.region}:${aws:accountId}:layer:BetterSqlite3:4
+      - arn:aws:lambda:${self:provider.region}:${aws:accountId}:layer:BetterSqlite3:9
+    role: ${ssm:/${self:service}/${self:provider.stage}/role/lambda/sqlite/process}
+    package:
+      patterns:
+        - 'process-sqlite-dbs/package*.json'
+        - 'process-sqlite-dbs/node_modules/**'
+        - 'process-sqlite-dbs/*.js'
 
   # do not change the name or path of this function
   # without also changing it in plugins/wordnet-plugin.js
