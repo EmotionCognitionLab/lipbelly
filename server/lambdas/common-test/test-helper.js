@@ -2,16 +2,25 @@
 
 const path = require('path');
 require('dotenv').config({path: path.join(__dirname, './env.sh')});
-const AWS = require('aws-sdk');
-const s3Client = new AWS.S3({endpoint: process.env.S3_ENDPOINT, apiVersion: '2006-03-01', s3ForcePathStyle: true, region: process.env.REGION});
-const dynamoClient = new AWS.DynamoDB({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION})
+import { S3Client, 
+    PutObjectCommand, 
+    DeleteObjectCommand, 
+    CreateBucketCommand, 
+    HeadBucketCommand,
+    DeleteBucketCommand,
+    ListObjectsV2Command,
+    DeleteObjectsCommand } from '@aws-sdk/client-s3'
+const s3Client = new S3Client({endpoint: process.env.S3_ENDPOINT, apiVersion: '2006-03-01', forcePathStyle: true, region: process.env.REGION});
+import { DynamoDBClient, CreateTableCommand, DescribeTableCommand, DeleteTableCommand } from '@aws-sdk/client-dynamodb'
+
+const dynamoClient = new DynamoDBClient({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION})
 
 module.exports = {
     s3: {
         addFile: async (bucket, key, data) => {
             let bucketExists = false;
             try {
-                await s3Client.headBucket({Bucket: bucket}).promise();
+                await s3Client.send(new HeadBucketCommand({Bucket: bucket}));
                 bucketExists = true;
             } catch (err) {
                 if (err.statusCode == 403) {
@@ -20,9 +29,9 @@ module.exports = {
             }
             try {
                 if (!bucketExists) {
-                    await s3Client.createBucket({Bucket: bucket}).promise();
+                    await s3Client.send(new CreateBucketCommand({Bucket: bucket}));
                 }
-                await s3Client.putObject({Bucket: bucket, Key: key, Body:  Buffer.from(data)}).promise();
+                await s3Client.send(new PutObjectCommand({Bucket: bucket, Key: key, Body:  Buffer.from(data)}));
             } catch (err) {
                 throw new Error(err);
             }
@@ -32,7 +41,7 @@ module.exports = {
 
         removeFile: async (bucket, key) => {
             try {
-                await s3Client.deleteObject({Bucket: bucket, Key: key}).promise();
+                await s3Client.send(new DeleteObjectCommand({Bucket: bucket, Key: key}));
             } catch (err) {
                 if (err.code !== 'NoSuchBucket') {
                     throw new Error(err);
@@ -42,14 +51,14 @@ module.exports = {
 
         removeBucket: async (bucket) => {
             try {
-                const items = await s3Client.listObjectsV2({Bucket: bucket}).promise();
+                const items = await s3Client.send(new ListObjectsV2Command({Bucket: bucket}));
                 if (items.Contents.length !== 0) {
                     const keys = items.Contents.map(i => ({ Key: i.Key}));
-                    await s3Client.deleteObjects({Bucket: bucket, Delete: { Objects: keys }}).promise();
+                    await s3Client.send(new DeleteObjectsCommand({Bucket: bucket, Delete: { Objects: keys }}));
                 }
-                await s3Client.deleteBucket({Bucket: bucket}).promise();
+                await s3Client.send(new DeleteBucketCommand({Bucket: bucket}));
             } catch (err) {
-                if (err.code !== 'NoSuchBucket') { // ignore NoSuchBucket err - bucket should be gone and it is
+                if (err.Code !== 'NoSuchBucket') { // ignore NoSuchBucket err - bucket should be gone and it is
                     throw new Error(err);
                 }
             }
@@ -58,7 +67,7 @@ module.exports = {
     
     dynamo: {
         createTable: async(tableName, keySchema, attributeDefinitions) => {
-            await dynamoClient.createTable({
+            await dynamoClient.send(new CreateTableCommand ({
                 TableName: tableName,
                 KeySchema: keySchema,
                 AttributeDefinitions: attributeDefinitions,
@@ -66,13 +75,13 @@ module.exports = {
                     ReadCapacityUnits: 1,
                     WriteCapacityUnits: 1
                 }
-            }).promise();
+            }));
             const waitMs = 1000;
             var retries = 3;
             var isActive = false;
             while (retries-- > 0 && !isActive) {
                 try {
-                    const tableStatus = await dynamoClient.describeTable({TableName: tableName}).promise();
+                    const tableStatus = await dynamoClient.send(new DescribeTableCommand({TableName: tableName}));
                     isActive = tableStatus.Table.TableStatus === 'ACTIVE';
                 } catch (err) {
                     if (err.code !== 'ResourceNotFoundException') {
@@ -91,7 +100,7 @@ module.exports = {
         },
 
         deleteTable: async(tableName) => {
-            await dynamoClient.deleteTable({TableName: tableName}).promise();
+            await dynamoClient.send(new DeleteTableCommand({TableName: tableName}));
         }
     }
 };
