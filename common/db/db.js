@@ -50,245 +50,10 @@ export default class Db {
         this.subId = this.constructor.getSubIdFromSession(sess);
      }
 
-     async saveResults(experiment, results, userId = null) {
-        if (!this.subId && !userId) {
-            throw new Error("You must provide either session or userId to save results.");
-        }
-
-        // if we have a subId (which is set when session is set) that overrides any passed-in userId
-        const subscriberId = this.subId ? this.subId : userId;
-        const now = new Date().toISOString();
-    
-        const putRequests = [];
-        results.forEach((r, idx) => {
-            const isRelevant = typeof r.isRelevant !== 'undefined' && r.isRelevant;
-            delete(r.isRelevant);
-            putRequests.push({
-                PutRequest: {
-                    Item: {
-                        experimentDateTime: `${experiment}|${now}|${idx}`,
-                        identityId: this.credentials.identityId,
-                        userId: subscriberId,
-                        results: r,
-                        isRelevant: isRelevant
-                    }
-                }
-            });
-        });
-
-
-        // slice into arrays of no more than 25 PutRequests due to DynamoDB limits
-        const chunks = [];
-        for (let i = 0; i < putRequests.length; i += 25) {
-            chunks.push(putRequests.slice(i, i + 25));
-        }
-
-        try {
-            for (let i=0; i<chunks.length; i++) {
-                const chunk = chunks[i];
-                const params = { RequestItems: {} };
-                params['RequestItems'][this.experimentTable] = chunk;
-                await this.batchWrite(params);
-            }
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-            
-    }
-
-    async getResultsForCurrentUser(expName=null, identityId = null) {   
-        if (!this.credentials && !identityId) {
-            throw new Error("You must provide either session or identityId to get results for the current user");
-        }
-
-        const identId = await this.getValidCreds(identityId);
-
-        try {
-            let ExclusiveStartKey, dynResults
-            let allResults = [];
-    
-            do {
-                const params = {
-                    TableName: this.experimentTable,
-                    ExclusiveStartKey,
-                    KeyConditionExpression: `identityId = :idKey`,
-                    ExpressionAttributeValues: { ':idKey': identId }
-                };
-                if (expName !== null) {
-                    params.KeyConditionExpression += " and begins_with(experimentDateTime, :expName)";
-                    params.ExpressionAttributeValues[":expName"] = expName;
-                }
-                dynResults = await this.query(params);
-                ExclusiveStartKey = dynResults.LastEvaluatedKey;
-                const results = dynResults.Items.map(i => {
-                    const parts = i.experimentDateTime.split('|');
-                    if (parts.length != 3) {
-                        throw new Error(`Unexpected experimentDateTime value: ${i.experimentDateTime}. Expected three parts, but found ${parts.length}.`)
-                    }
-                    const experiment = parts[0];
-                    const dateTime = parts[1];
-                    // index of result in original results list is parts[2] (exists only for uniqueness)
-                    return {
-                        experiment: experiment,
-                        dateTime: dateTime,
-                        isRelevant: i.isRelevant,
-                        results: i.results
-                    }
-                });
-                allResults = [...allResults, ...results];
-            } while (dynResults.LastEvaluatedKey)
-            
-            return allResults.sort((r1, r2) => {
-                if (r1.dateTime < r2.dateTime) {
-                    return -1
-                }
-                if (r1.dateTime > r2.dateTime) {
-                    return 1;
-                }
-                return 0;
-            });
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-    }
-
-    async getAllResultsForCurrentUser() {
-        return this.getResultsForCurrentUser();
-    }
-    
-    async getExperimentResultsForCurrentUser(expName) {
-        return this.getResultsForCurrentUser(expName);
-    }
-
-    async getSetsForUser(userId) {
-        try {
-            let ExclusiveStartKey, dynResults
-            let allResults = [];
-    
-            do {
-                const params = {
-                    TableName: this.experimentTable,
-                    IndexName: this.userExperimentIndex,
-                    ExclusiveStartKey,
-                    KeyConditionExpression: 'userId = :userId and begins_with(experimentDateTime, :set)',
-                    ExpressionAttributeValues: { ':userId': userId, ':set': "set" },
-                };
-                dynResults = await this.query(params);
-                ExclusiveStartKey = dynResults.LastEvaluatedKey;
-                const results = dynResults.Items.map(i => {
-                    const parts = i.experimentDateTime.split('|');
-                    if (parts.length != 3) {
-                        throw new Error(`Unexpected experimentDateTime value: ${i.experimentDateTime}. Expected three parts, but found ${parts.length}.`)
-                    }
-                    const experiment = parts[0];
-                    const dateTime = parts[1];
-                    // index of result in original results list is parts[2] (exists only for uniqueness)
-                    return {
-                        identityId: i.identityId,
-                        experiment: experiment,
-                        dateTime: dateTime,
-                    }
-                });
-                allResults = [...allResults, ...results];
-            } while (dynResults.LastEvaluatedKey)
-            
-            return allResults.sort((r1, r2) => {
-                if (r1.dateTime < r2.dateTime) {
-                    return -1
-                }
-                if (r1.dateTime > r2.dateTime) {
-                    return 1;
-                }
-                return 0;
-            });
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-    }
-
-    async getBaselineIncompleteUsers(preOrPost) {
-        return await this.getUsersByBaselineStatus(preOrPost, 'incomplete');
-    }
-
-    async getBaselineCompleteUsers(preOrPost) {
-        return await this.getUsersByBaselineStatus(preOrPost, 'complete');
-    }
-
-    async getUsersByBaselineStatus(preOrPost, status) {
-        if (preOrPost !== 'pre' && preOrPost !== 'post') {
-            throw new Error(`Expected preOrPost to be either 'pre' or 'post' but received "${preOrPost}".`);
-        }
-
-        if (status !== 'complete' && status !== 'incomplete') {
-            throw new Error(`Expected status to be either 'complete' or 'incomplete' but received "${status}".`);
-        }
-
-        const preOrPostAttr = preOrPost === 'pre' ? 'preComplete' : 'postComplete'
-        let filter;
-        let attrValues;
-        if (status === 'incomplete') {
-            filter = `attribute_not_exists(${preOrPostAttr}) or ${preOrPostAttr} = :f`;
-            attrValues = { ':f': false };
-        } else {
-            filter = `${preOrPostAttr} = :t`;
-            attrValues = { ':t': true };
-        }
-
+    async getAllUsers() {
         try {
             const params = {
-                TableName: this.usersTable,
-                FilterExpression: filter,
-                ExpressionAttributeValues: attrValues
-            };
-            const dynResults = await this.scan(params);
-            return dynResults.Items;
-            
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-    }
-
-    async getHomeTrainingInProgressUsers() {
-        try {
-            const params = {
-                TableName: this.usersTable,
-                FilterExpression: 'preComplete = :t and attribute_exists(progress.visit2) and (homeComplete = :f or attribute_not_exists(homeComplete))',
-                ExpressionAttributeValues: {':t': true, ':f': false}
-            };
-            const dynResults = await this.scan(params);
-            return dynResults.Items;
-            
-        } catch (err) {
-            this.logger.error(err);
-            throw err;
-        }
-    }
-
-    async getBloodDrawUsers(yyyymmddStr) {
-        try {
-            const params = {
-                TableName: this.usersTable,
-                FilterExpression: 'begins_with(progress.visit2, :ymdDate) or begins_with(progress.visit3, :ymdDate) or begins_with(progress.visit5, :ymdDate)',
-                ExpressionAttributeValues: {':ymdDate': yyyymmddStr}
-            };
-            const dynResults = await this.scan(params);
-            return dynResults.Items;
-        } catch (err) {
-            this.logger.error(err);
-            throw(err);
-        }
-    }
-
-    async getUsersStartingOn(yyyyMMddStartDate) {
-        try {
-            const params = {
-                TableName: this.usersTable,
-                FilterExpression: 'startDate = :sd',
-                ExpressionAttributeValues: {':sd': yyyyMMddStartDate}
+                TableName: this.usersTable
             };
             const dynResults = await this.scan(params);
             return dynResults.Items;
@@ -298,14 +63,15 @@ export default class Db {
         }
     }
 
-    async segmentsForUser(humanId, startDate = new Date(0), endDate = new Date(1000 * 60 * 60 * 24 * 365 * 1000)) {
+    async segmentsForUser(userId, stage, startDate = new Date(0), endDate = new Date(1000 * 60 * 60 * 24 * 365 * 1000)) {
         const startDateEpoch = Math.floor(startDate.getTime() / 1000);
         const endDateEpoch = Math.floor(endDate.getTime() / 1000);
         try {
             const params = {
                 TableName: this.segmentsTable,
-                KeyConditionExpression: 'humanId = :hId and endDateTime between :st and :et',
-                ExpressionAttributeValues: { ':hId': humanId, ':st': startDateEpoch, ':et': endDateEpoch }
+                KeyConditionExpression: 'userId = :uId and endDateTime between :st and :et',
+                FilterExpression: 'stage = :stage',
+                ExpressionAttributeValues: { ':uId': userId, ':stage': stage, ':st': startDateEpoch, ':et': endDateEpoch }
             };
 
             const results = await this.query(params);
@@ -416,19 +182,6 @@ export default class Db {
             throw new Error(`Found multiple users with email ${email}.`);
         }
         return dynResults.Items[0];
-    }
-
-    async getIdentityIdForUserId(userId) {
-        const baseParams = {
-            TableName: this.experimentTable,
-            IndexName: 'userId-experimentDateTime-index',
-            KeyConditionExpression: "userId = :userId",
-            ExpressionAttributeValues: {":userId": userId},
-            ProjectionExpression: 'identityId'
-        };
-        const result = await this.query(baseParams);
-        if (result.Items.length === 0) return null;
-        return result.Items[0].identityId;
     }
 
     async getValidCreds(identityId=null) {
