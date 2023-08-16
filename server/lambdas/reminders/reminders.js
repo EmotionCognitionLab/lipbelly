@@ -1,8 +1,8 @@
 
 'use strict';
 
-import SES from 'aws-sdk/clients/ses.js';
-import SNS from 'aws-sdk/clients/sns.js';
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
@@ -24,8 +24,8 @@ const homeTrainingMsg = {
     sms: "Have you done your training today? If you don't have time right now, put a reminder in your calendar to train later today."
 }
 
-const ses = new SES({endpoint: sesEndpoint, apiVersion: '2010-12-01', region: region});
-const sns = new SNS({endpoint: snsEndpoint, apiVersion: '2010-03-31', region: region});
+const ses = new SESClient({endpoint: sesEndpoint, apiVersion: '2010-12-01', region: region});
+const sns = new SNSClient({endpoint: snsEndpoint, apiVersion: '2010-03-31', region: region});
 const db = new Db();
 
 export async function handler (event) {
@@ -118,7 +118,7 @@ async function deliverReminders(recipients, commType, msg) {
         Source: emailSender
     }
     try {
-        await ses.sendEmail(params).promise();
+        await ses.send(new SendEmailCommand(params));
     } catch (err) {
         console.error(`Error sending email to ${recip}. (Message: ${msg.text})`, err);
     }
@@ -141,7 +141,7 @@ async function deliverReminders(recipients, commType, msg) {
         }
     }
     try {
-        await sns.publish(params).promise();
+        await sns.send(new PublishCommand(params));
     } catch (err) {
         console.error(`Error sending sms to ${recip}. (Message: ${msg.sms})`, err);
     }
