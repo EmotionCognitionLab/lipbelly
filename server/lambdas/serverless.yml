@@ -232,13 +232,13 @@ functions:
     handler: reminders/reminders.handler
     events:
       - schedule:
-          name: "${self:provider.stage}-home-training-11am-email-reminder"
+          name: "${self:service}-${self:provider.stage}-home-training-11am-email-reminder"
           rate: cron(0 18 * * ? *)
           input:
             commType: email
             reminderType: homeTraining
       - schedule:
-          name: "${self:provider.stage}-home-training-8pm-sms-reminder"
+          name: "${self:service}-${self:provider.stage}-home-training-8pm-sms-reminder"
           rate: cron(0 3 * * ? *)
           input:
             commType: sms
