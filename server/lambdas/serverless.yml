@@ -228,88 +228,30 @@ functions:
   #     patterns:
   #       - 'admin-api/participants/*.js'
 
-  # reminders:
-  #   handler: reminders/reminders.handler
-  #   events:
-  #     - schedule:
-  #         name: "${self:provider.stage}-pre-baseline-6am-email-reminder"
-  #         rate: cron(0 14 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: preBaseline
-  #     - schedule:
-  #         rate:
-  #           - cron(0 19 * * ? *)
-  #           - cron(0 4 * * ? *)
-  #         input:
-  #           commType: sms
-  #           reminderType: preBaseline
-  #     - schedule:
-  #         name: "${self:provider.stage}-home-training-11am-email-reminder"
-  #         rate: cron(0 19 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: homeTraining
-  #     - schedule:
-  #         name: "${self:provider.stage}-home-training-730pm-sms-reminder"
-  #         rate: cron(30 3 * * ? *)
-  #         input:
-  #           commType: sms
-  #           reminderType: homeTraining
-  #     - schedule:
-  #         name: "${self:provider.stage}-pre-baseline-4pm-email-reminder"
-  #         rate: cron(0 0 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: preBaseline
-  #     - schedule:
-  #         name: "${self:provider.stage}-blood-draw-survey-noon-email"
-  #         rate: cron(00 20 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: bloodDrawSurvey
-  #     - schedule:
-  #         name: "${self:provider.stage}-start-day-10AM-email-reminder"
-  #         rate: cron(0 18 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: startTomorrow
-  #     - schedule:
-  #         name: "${self:provider.stage}-start-day-10AM-sms-reminder"
-  #         rate: cron(1 18 * * ? *)
-  #         input:
-  #           commType: sms
-  #           reminderType: startTomorrow
-  #     - schedule:
-  #         name: "${self:provider.stage}-post-baseline-602am-email-reminder"
-  #         rate: cron(2 14 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: postBaseline
-  #     - schedule:
-  #         name: "${self:provider.stage}-post-baseline-402pm-email-reminder"
-  #         rate: cron(2 0 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: postBaseline
-  #     - schedule:
-  #         name: "${self:provider.stage}-no-multi-lumos-8am-email-reminder"
-  #         rate: cron(0 15 * * ? *)
-  #         input:
-  #           commType: email
-  #           reminderType: noMultiLumos
-        
-  #   environment:
-  #     SITE_URL: "${self:custom.siteUrl.${opt:stage}}/daily-tasks/"
-  #     REGION: ${self:provider.region}
-  #     EMAIL_SENDER: "uscemotioncognitionlab@gmail.com"
-  #     STUDY_ADMIN_EMAIL: ${env:STUDY_ADMIN_EMAIL}
-  #     SNS_ENDPOINT: "https://sns.${self:provider.region}.amazonaws.com"
-  #     SES_ENDPOINT: "https://email.${self:provider.region}.amazonaws.com"
-  #   role: ${ssm:/${self:service}/${self:provider.stage}/role/lambda/dynamodb/sns/ses}
-  #   package:
-  #     patterns:
-  #       - 'reminders/*.js'
+  reminders:
+    handler: reminders/reminders.handler
+    events:
+      - schedule:
+          name: "${self:provider.stage}-home-training-11am-email-reminder"
+          rate: cron(0 18 * * ? *)
+          input:
+            commType: email
+            reminderType: homeTraining
+      - schedule:
+          name: "${self:provider.stage}-home-training-8pm-sms-reminder"
+          rate: cron(0 3 * * ? *)
+          input:
+            commType: sms
+            reminderType: homeTraining
+    environment:
+      REGION: ${self:provider.region}
+      EMAIL_SENDER: "uscemotioncognitionlab@gmail.com"
+      SNS_ENDPOINT: "https://sns.${self:provider.region}.amazonaws.com"
+      SES_ENDPOINT: "https://email.${self:provider.region}.amazonaws.com"
+    role: ${ssm:/${self:service}/${self:provider.stage}/role/lambda/dynamodb/sns/ses}
+    package:
+      patterns:
+        - 'reminders/*.js'
 
   ds-signing-done:
     handler: docusign/docusign.signingDone
