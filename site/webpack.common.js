@@ -4,7 +4,7 @@ const webpack = require("webpack");
 
 module.exports = {
     entry: {
-        // 'admin/dashboard': 'admin/dashboard/index.js',
+        'admin/dashboard': 'admin/dashboard/index.js',
         // 'admin/docusign': 'admin/docusign/docusign.js',
         // 'daily-tasks': 'daily-tasks/daily-tasks.js',
         'register': 'register/index.js',
@@ -18,12 +18,12 @@ module.exports = {
         new webpack.DefinePlugin({
             'process.env': JSON.stringify({'NODE_DEBUG': false}),
         }),
-        // new HtmlWebpackPlugin({
-        //     title: 'Admin - Dashboard',
-        //     filename: 'admin/dashboard/index.html',
-        //     template: 'admin/dashboard/index.ejs',
-        //     chunks: ['admin/dashboard'],
-        // }),
+        new HtmlWebpackPlugin({
+            title: 'Admin - Dashboard',
+            filename: 'admin/dashboard/index.html',
+            template: 'admin/dashboard/index.ejs',
+            chunks: ['admin/dashboard'],
+        }),
         // new HtmlWebpackPlugin({
         //     title: 'Admin - Consent via Docusign',
         //     filename: 'admin/docusign/index.html',
@@ -88,6 +88,10 @@ module.exports = {
             {
                 test: /\.(png|svg|jpg|jpeg|gif|wav|ogg|mp3)$/i,
                 type: 'asset/resource',
+            },
+            { 
+                test: /\.handlebars$/, 
+                loader: "handlebars-loader" 
             },
             {
                 exclude: [path.join(__dirname, "scripts")],
