@@ -52,7 +52,8 @@ async function sendHomeTraininingReminders(commType) {
 
     try {
         const allUsers = await db.getAllUsers();
-        for (const u of allUsers.filter(u => !u.progress || (u.progress && !u.progress.visit2))) { // visit 2 marks study completion
+        for (const u of allUsers.filter(u => 
+            !u.progress || (u.progress && !u.progress.visit2 && !u.progress.dropped))) { // visit 2 marks study completion
             const todayStart = dayjs().tz('America/Los_Angeles').startOf('day').toDate();
             const todayEnd = dayjs().tz('America/Los_Angeles').endOf('day').toDate();
             const segments = await db.segmentsForUser(u.userId, 2, todayStart, todayEnd);
