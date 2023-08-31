@@ -7,6 +7,8 @@
  import DynamoDB from 'aws-sdk/clients/dynamodb.js';
  import { Logger } from "../logger/logger.js";
  import { getAuth } from "../auth/auth.js";
+ import { earningsTypes } from "../types/types.js";
+ 
  
  'use strict';
 
@@ -54,6 +56,23 @@ export default class Db {
         try {
             const params = {
                 TableName: this.usersTable
+            };
+            const dynResults = await this.scan(params);
+            return dynResults.Items;
+        } catch (err) {
+            this.logger.error(err);
+            throw err;
+        }
+    }
+
+    async getInProgressUsers() {
+        try {
+            const params = {
+                TableName: this.usersTable,
+                FilterExpression: `attribute_exists(progress.visit1) and progress.visit1 != :null and
+                (attribute_not_exists(progress.visit2) or progress.visit2 = :null) and 
+                (attribute_not_exists(progress.dropped) or progress.dropped = :null)`,
+                ExpressionAttributeValues: {':null': null}
             };
             const dynResults = await this.scan(params);
             return dynResults.Items;
@@ -111,6 +130,37 @@ export default class Db {
                     amount: i.amount
                 };
             });
+        } catch (err) {
+            this.logger.error(err);
+            throw err;
+        }
+    }
+
+    async saveEarnings(userId, earningsType, date) {
+        let amount;
+        switch(earningsType) {
+            case earningsTypes.VISIT1:
+            case earningsTypes.VISIT2:
+                amount = 25;
+                break;
+            case earningsTypes.BREATH1:
+            case earningsTypes.BREATH2:
+                amount = 2;
+                break;
+            default:
+                throw new Error(`Unrecognized earnings type ${earningsType}.`);
+        }
+        try {
+            const params = {
+                TableName: this.earningsTable,
+                Key: {
+                    userId: userId,
+                    typeDate: `${earningsType}|${date}`
+                },
+                UpdateExpression: `set amount = :amount`,
+                ExpressionAttributeValues: { ':amount': amount }
+            };
+            await this.update(params);
         } catch (err) {
             this.logger.error(err);
             throw err;
