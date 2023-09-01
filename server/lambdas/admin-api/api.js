@@ -36,7 +36,12 @@ exports.handler = async(event) => {
         }
         
         if (method === "GET") {
-            if (path == `/admin/participant/${participantId}/status`) {
+            if (path.startsWith(`/admin/participant/${participantId}/earnings`)) {
+                const earningsType = event.pathParameters.earningsType;
+                return await db.earningsForUser(participantId, earningsType);
+            }
+
+            if (path === `/admin/participant/${participantId}/status`) {
                 return await getUserStatus(participantId, db);
             }
 

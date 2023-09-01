@@ -82,10 +82,10 @@ functions:
           method: PUT
           path: /self
           authorizer: serviceAuthorizer
-  #     - httpApi:
-  #         method: GET
-  #         path: /self/earnings/{earningsType+}
-  #         authorizer: serviceAuthorizer
+      - httpApi:
+          method: GET
+          path: /self/earnings/{earningsType+}
+          authorizer: serviceAuthorizer
       - httpApi:
           method: PUT
           path: /self/emopics
@@ -126,6 +126,10 @@ functions:
           method: PUT
           path: /admin/participant/{id}
           authorizer: serviceAuthorizer
+      - httpApi:
+            path: /admin/participant/{id}/earnings/{earningsType+}
+            method: GET
+            authorizer: serviceAuthorizer
       - httpApi:
           method: GET
           path: /admin/participant/{id}/status
