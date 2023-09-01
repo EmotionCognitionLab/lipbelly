@@ -8,5 +8,6 @@ getAuth(
         const client = new ApiClient(session);
         const dash = new Dashboard(document.querySelector("#dashboard > tbody"), document.getElementById("user-details"), client);
         await dash.init();
-    }
+    },
+    err => console.error(err)
 ).getSession();

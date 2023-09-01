@@ -2,6 +2,7 @@ import tableTmpl from "./templates/table.handlebars";
 import userDetailsTmpl from "./templates/userDetails.handlebars";
 import statusTmpl from "./templates/status.handlebars";
 import { DatedCheckbox } from "./DatedCheckbox";
+import { Payboard } from "../../../common/pay-info/pay-info";
 
 export class Dashboard {
     constructor(tbody, userDetailsDiv, apiClient) {
@@ -82,7 +83,12 @@ export class Dashboard {
             phone: user.phone_number,
             email: user.email
         };
+
         this.userDetailsDiv.innerHTML = userDetailsTmpl({user: dispUser});
+        const payInfoDiv = document.getElementById("pay-info");
+        const payErrsDiv = document.getElementById("pay-errors");
+        const payboard = new Payboard(payInfoDiv, payErrsDiv, this.apiClient, userId, true);
+        await payboard.init();
         this.userDetailsDiv.classList.remove("hidden");
     }
 
