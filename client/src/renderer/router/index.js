@@ -6,18 +6,16 @@ import LoginComponent from '../components/LoginComponent.vue'
 import ConnectingComponent from '../components/ConnectingComponent.vue'
 import RestComponent from '../components/RestComponent.vue'
 import SetupComponent from '../components/SetupComponent.vue'
-import DummyComponent from '../components/DummyComponent.vue'
 import TrainingComponent from '../components/TrainingComponent.vue'
 
 const noAuthRoutes = ['/signin', '/login/index.html', '/setup', '/', '/index.html']
 
 const routes = [
-  { path: '/dummy', component: DummyComponent },
   { path: '/login/index.html', component: OauthRedirectComponent }, // to match the oauth redirect we get
   { path: '/signin', component: LoginComponent, name: 'signin', props: true },
   { path: '/rest', component: RestComponent },
   { path: '/setup', name: 'setup', component: SetupComponent },
-  { path: '/current-stage', beforeEnter: earningsOrSetup, component: DummyComponent },
+  { path: '/current-stage', beforeEnter: earningsOrSetup },
   {
     path: '/',
     name: 'landing-page',
