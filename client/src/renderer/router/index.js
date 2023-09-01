@@ -4,7 +4,6 @@ import { SessionStore } from '../../session-store'
 import OauthRedirectComponent from '../components/OauthRedirectComponent.vue'
 import LoginComponent from '../components/LoginComponent.vue'
 import ConnectingComponent from '../components/ConnectingComponent.vue'
-import RestComponent from '../components/RestComponent.vue'
 import SetupComponent from '../components/SetupComponent.vue'
 import TrainingComponent from '../components/TrainingComponent.vue'
 
@@ -13,7 +12,6 @@ const noAuthRoutes = ['/signin', '/login/index.html', '/setup', '/', '/index.htm
 const routes = [
   { path: '/login/index.html', component: OauthRedirectComponent }, // to match the oauth redirect we get
   { path: '/signin', component: LoginComponent, name: 'signin', props: true },
-  { path: '/rest', component: RestComponent },
   { path: '/setup', name: 'setup', component: SetupComponent },
   { path: '/current-stage', beforeEnter: earningsOrSetup },
   {
@@ -56,10 +54,6 @@ router.beforeEach(async (to) => {
   }
 
   return true
-})
-
-window.mainAPI.onShowRestBreathing(() => {
-  router.push({path: '/rest'})
 })
 
 export default router

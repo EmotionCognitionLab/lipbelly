@@ -49,7 +49,6 @@ async function createWindow() {
 
 const EARNINGS_MENU_ID = 'earnings'
 const TRAINING_MENU_ID = 'training'
-const REST_BREATHING_MENU_ID = 'rest-breathing'
 
 function buildMenuTemplate(window) {
   const isMac = process.platform === 'darwin'
@@ -109,7 +108,6 @@ function buildMenuTemplate(window) {
         { type: 'separator' },
         { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
         { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
-        { label: 'Rest Breathing', id: REST_BREATHING_MENU_ID, click: () => window.webContents.send('show-rest-breathing'), visible: false, accelerator: 'CmdOrCtrl+Shift+B'}
       ]
     },
     // { role: 'windowMenu' }
@@ -215,17 +213,7 @@ ipcMain.handle('show-login-window', () => {
     // // in prod mode app URLs start with 'app://'
     const query = oauthRedirectUrl.indexOf('?') > 0 ? oauthRedirectUrl.slice(oauthRedirectUrl.indexOf('?')) : ''
     const oauthHandler = process.env.WEBPACK_DEV_SERVER_URL ? `http://localhost:8080/./index.html#/login/index.html${query}` : `app://./index.html#/login/index.html${query}`
-    // try {
-    await mainWin.loadURL(oauthHandler)  
-    // } catch (err) {
-    //   // For unknown reasons, the mainWin.loadURL call above reliably triggers
-    //   // ERR_ABORTED (or sometimes ERR_FAILED). Wrapping it in a setTimeout 
-    //   // (so it happens after the will-redirect handler is over) does not help.
-    //   if (!err.message.startsWith("ERR_ABORTED") && !err.message.startsWith("ERR_FAILED")) {
-    //     remoteLogger.error(err)
-    //     throw(err)
-    //   }
-    // }
+    await mainWin.loadURL(oauthHandler)
   })
 })
 
