@@ -6920,6 +6920,7 @@ __metadata:
     mathjs: ^11.8.1
     mini-css-extract-plugin: 0.4.0
     node-loader: ^0.6.0
+    pay-info: ../common/pay-info
     pvs-breath-pacer: "git+https://github.com/EmotionCognitionLab/pvs-breath-pacer.git#semver:^1.0.1"
     style-loader: ^0.21.0
     url-loader: ^1.0.1
@@ -10418,6 +10419,24 @@ __metadata:
   version: 2.0.1
   resolution: "handle-thing@npm:2.0.1"
   checksum: 68071f313062315cd9dce55710e9496873945f1dd425107007058fc1629f93002a7649fcc3e464281ce02c7e809a35f5925504ab8105d972cf649f1f47cb7d6c
+  languageName: node
+  linkType: hard
+
+"handlebars@npm:^4.7.7":
+  version: 4.7.8
+  resolution: "handlebars@npm:4.7.8"
+  dependencies:
+    minimist: ^1.2.5
+    neo-async: ^2.6.2
+    source-map: ^0.6.1
+    uglify-js: ^3.1.4
+    wordwrap: ^1.0.0
+  dependenciesMeta:
+    uglify-js:
+      optional: true
+  bin:
+    handlebars: bin/handlebars
+  checksum: 00e68bb5c183fd7b8b63322e6234b5ac8fbb960d712cb3f25587d559c2951d9642df83c04a1172c918c41bcfc81bfbd7a7718bbce93b893e0135fc99edea93ff
   languageName: node
   linkType: hard
 
@@ -14697,6 +14716,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pay-info@file:../common/pay-info::locator=client%40workspace%3A.":
+  version: 1.0.0
+  resolution: "pay-info@file:../common/pay-info#../common/pay-info::hash=0df1d3&locator=client%40workspace%3A."
+  dependencies:
+    handlebars: ^4.7.7
+  checksum: 2aa162ef55c55f7849dacfec58ca8831bb7e019b71f9e617ceec93665a84cc108e8776c8a3c52a01f746deb8e323cf298bd942656abf0bd5e0f5ed90553da760
+  languageName: node
+  linkType: hard
+
 "pbkdf2@npm:^3.0.3":
   version: 3.1.2
   resolution: "pbkdf2@npm:3.1.2"
@@ -18414,6 +18442,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"uglify-js@npm:^3.1.4":
+  version: 3.17.4
+  resolution: "uglify-js@npm:3.17.4"
+  bin:
+    uglifyjs: bin/uglifyjs
+  checksum: 7b3897df38b6fc7d7d9f4dcd658599d81aa2b1fb0d074829dd4e5290f7318dbca1f4af2f45acb833b95b1fe0ed4698662ab61b87e94328eb4c0a0d3435baf924
+  languageName: node
+  linkType: hard
+
 "uglify-to-browserify@npm:~1.0.0":
   version: 1.0.2
   resolution: "uglify-to-browserify@npm:1.0.2"
@@ -19459,6 +19496,13 @@ __metadata:
   version: 0.0.2
   resolution: "wordwrap@npm:0.0.2"
   checksum: 1152eb7f04c3771df4fd8ea817e3945586f6be2e906cd7d95e60248e136a7f506c911cc738f963b7b18f74c215d7fe61f5b276fc82c3cee930abfc61a215afec
+  languageName: node
+  linkType: hard
+
+"wordwrap@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "wordwrap@npm:1.0.0"
+  checksum: 2a44b2788165d0a3de71fd517d4880a8e20ea3a82c080ce46e294f0b68b69a2e49cff5f99c600e275c698a90d12c5ea32aff06c311f0db2eb3f1201f3e7b2a04
   languageName: node
   linkType: hard
 

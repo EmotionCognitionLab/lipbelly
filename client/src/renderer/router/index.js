@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import { isAuthenticated, getAuth } from '../../../../common/auth/auth.js'
 import { SessionStore } from '../../session-store'
+import EarningsComponent from '../components/EarningsComponent.vue'
 import OauthRedirectComponent from '../components/OauthRedirectComponent.vue'
 import LoginComponent from '../components/LoginComponent.vue'
 import ConnectingComponent from '../components/ConnectingComponent.vue'
@@ -13,7 +14,8 @@ const routes = [
   { path: '/login/index.html', component: OauthRedirectComponent }, // to match the oauth redirect we get
   { path: '/signin', component: LoginComponent, name: 'signin', props: true },
   { path: '/setup', name: 'setup', component: SetupComponent },
-  { path: '/current-stage', beforeEnter: earningsOrSetup },
+  { path: '/earnings', name: 'earnings', component: EarningsComponent },
+  { path: '/current-stage', beforeEnter: earningsOrSetup, component: EarningsComponent },
   {
     path: '/',
     name: 'landing-page',
@@ -31,7 +33,7 @@ async function earningsOrSetup() {
   if (await window.mainAPI.getKeyValue('isAssignedToCondition') !== 'true') {
     return { name: 'setup' }
   }
-  return {path: '/training'} // this will be replaced by the earnings page
+  return {path: '/earnings'}
 }
 
 // use navigation guards to handle authentication
@@ -54,6 +56,14 @@ router.beforeEach(async (to) => {
   }
 
   return true
+})
+
+window.mainAPI.onShowEarnings(() => {
+  router.push({path: '/earnings'});
+})
+
+window.mainAPI.onShowTasks(() => {
+  router.push({path: '/training'});
 })
 
 export default router
