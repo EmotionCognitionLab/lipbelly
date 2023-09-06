@@ -1,6 +1,7 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
 contextBridge.exposeInMainWorld('mainAPI', {
+    disableMenus: async () => ipcRenderer.invoke('disable-menus'),
     showLoginWindow: () => ipcRenderer.invoke('show-login-window'),
     onShowEarnings: (callback) => ipcRenderer.on('show-earnings', callback),
     onShowTasks: (callback) => ipcRenderer.on('show-tasks', callback),
