@@ -7,6 +7,7 @@ import LoginComponent from '../components/LoginComponent.vue'
 import ConnectingComponent from '../components/ConnectingComponent.vue'
 import SetupComponent from '../components/SetupComponent.vue'
 import TrainingComponent from '../components/TrainingComponent.vue'
+import LabVisit2Component from '../components/LabVisit2Component.vue'
 
 const noAuthRoutes = ['/signin', '/login/index.html', '/setup', '/', '/index.html']
 
@@ -21,7 +22,8 @@ const routes = [
     name: 'landing-page',
     component: ConnectingComponent,
   },
-  { path: '/training', component: TrainingComponent }
+  { path: '/training', component: TrainingComponent },
+  { path: '/visit2', component: LabVisit2Component }
 ]
 
 const router = createRouter({
