@@ -49,6 +49,7 @@ async function createWindow() {
 
 const EARNINGS_MENU_ID = 'earnings'
 const TRAINING_MENU_ID = 'training'
+const SURVEY_MENU_ID = 'survey'
 
 function buildMenuTemplate(window) {
   const isMac = process.platform === 'darwin'
@@ -108,6 +109,7 @@ function buildMenuTemplate(window) {
         { type: 'separator' },
         { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
         { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
+        { label: 'Lab Visit 2 Survey', id: SURVEY_MENU_ID, click: () => showSurvey(window), visible: false, accelerator: 'CmdOrCtrl+Shift+S'}
       ]
     },
     // { role: 'windowMenu' }
@@ -131,6 +133,18 @@ function buildMenuTemplate(window) {
       submenu: [{role: 'about'}]
     }])
   ]
+}
+
+function showSurvey(window) {
+  const fullSession = SessionStore.buildSession(SessionStore.session);
+  const idToken = fullSession.getIdToken().getJwtToken();
+  if (!idToken) {
+      throw new Error('No id token found in session')
+  }
+  const payload = idToken.split('.')[1];
+  const tokenobj = JSON.parse(atob(payload));
+  const uid = tokenobj.sub;
+  window.loadURL(`https://usc.qualtrics.com/jfe/form/SV_4H0l9LJmeR6AlfM?uid=${uid}`)
 }
 
 // Quit when all windows are closed.

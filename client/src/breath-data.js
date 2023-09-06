@@ -307,6 +307,7 @@ async function initBreathDb(serializedSession) {
 
 ipcMain.handle('login-succeeded', async (_event, session) => {
     if (!db) await initBreathDb(session);
+    SessionStore.session = session;
 });
 
 
