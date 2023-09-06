@@ -50,6 +50,7 @@ async function createWindow() {
 const EARNINGS_MENU_ID = 'earnings'
 const TRAINING_MENU_ID = 'training'
 const SURVEY_MENU_ID = 'survey'
+const LAB_VISIT_MENU_ID = 'lab-visit'
 
 function buildMenuTemplate(window) {
   const isMac = process.platform === 'darwin'
@@ -109,7 +110,8 @@ function buildMenuTemplate(window) {
         { type: 'separator' },
         { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
         { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
-        { label: 'Lab Visit 2 Survey', id: SURVEY_MENU_ID, click: () => showSurvey(window), visible: false, accelerator: 'CmdOrCtrl+Shift+S'}
+        { label: 'Lab Visit 2 Survey', id: SURVEY_MENU_ID, click: () => showSurvey(window), visible: false, accelerator: 'CmdOrCtrl+Shift+S'},
+        { label: 'Lab Visit 2 Breathing', id: LAB_VISIT_MENU_ID, click: () => showLabVisit2(window), visible: false, accelerator: 'CmdOrCtrl+Shift+L'}
       ]
     },
     // { role: 'windowMenu' }
@@ -145,6 +147,11 @@ function showSurvey(window) {
   const tokenobj = JSON.parse(atob(payload));
   const uid = tokenobj.sub;
   window.loadURL(`https://usc.qualtrics.com/jfe/form/SV_4H0l9LJmeR6AlfM?uid=${uid}`)
+}
+
+function showLabVisit2(window) {
+  const visit2Url = process.env.WEBPACK_DEV_SERVER_URL ? 'http://localhost:8080/#/visit2' : 'app://./index.html#/visit2'
+  window.loadURL(visit2Url)
 }
 
 // Quit when all windows are closed.
@@ -282,6 +289,12 @@ ipcMain.on('set-key-value', (event, key, value) => {
 
 ipcMain.handle('set-stage', async(_event, stage) => {
   emwave.setStage(stage)
+})
+
+ipcMain.handle('disable-menus', () => {
+  const m = Menu.getApplicationMenu()
+  m.getMenuItemById(EARNINGS_MENU_ID).enabled = false
+  m.getMenuItemById(TRAINING_MENU_ID).enabled = false
 })
 
 ipcMain.handle('quit', () => {
