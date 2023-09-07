@@ -14717,11 +14717,11 @@ __metadata:
   linkType: hard
 
 "pay-info@file:../common/pay-info::locator=client%40workspace%3A.":
-  version: 1.0.0
-  resolution: "pay-info@file:../common/pay-info#../common/pay-info::hash=0df1d3&locator=client%40workspace%3A."
+  version: 1.0.1
+  resolution: "pay-info@file:../common/pay-info#../common/pay-info::hash=21024e&locator=client%40workspace%3A."
   dependencies:
     handlebars: ^4.7.7
-  checksum: 2aa162ef55c55f7849dacfec58ca8831bb7e019b71f9e617ceec93665a84cc108e8776c8a3c52a01f746deb8e323cf298bd942656abf0bd5e0f5ed90553da760
+  checksum: 067a56339e428b35e09a9330e13c9f146aee87a851caf1fcd5183d8dcb32534e2c15a9ddb50e81ae44637bee1236ea8e6f70ed0974b257209812e2b34dda7385
   languageName: node
   linkType: hard
 
