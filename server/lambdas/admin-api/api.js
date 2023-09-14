@@ -1,6 +1,7 @@
 import { STSClient, AssumeRoleCommand } from "@aws-sdk/client-sts";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import Db from 'db/db.js';
-import AWS from "aws-sdk";
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -91,12 +92,8 @@ async function credentialsForRole(roleArn) {
 }
 
 function dbWithCredentials(credentials) {
-    const docClient = new AWS.DynamoDB.DocumentClient({
-        endpoint: dynamoEndpoint,
-        apiVersion: "2012-08-10",
-        region: region,
-        credentials: credentials
-    });
+    const dynClient = new DynamoDBClient({region: region, endpoint: dynamoEndpoint, apiVersion: "2012-08-10", credentials: credentials});
+    const docClient = DynamoDBDocumentClient.from(dynClient);
 
     const db = new Db();
     db.docClient = docClient;

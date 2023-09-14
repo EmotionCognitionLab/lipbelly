@@ -11,8 +11,10 @@ const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(customParseFormat);
-const AWS = require('aws-sdk');
-const docClient = new AWS.DynamoDB.DocumentClient({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION})
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+const dynClient = new DynamoDBClient({region: process.env.REGION, endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: "2012-08-10"});
+const docClient = DynamoDBDocumentClient.from(dynClient);
 
 const conditions = require('../api.js').validConditions;
 
@@ -35,7 +37,7 @@ describe("API call for user", () => {
             TableName: process.env.USERS_TABLE,
             Item: user
         };
-        await docClient.put(params).promise();
+        await docClient.send(new PutCommand(params));
     });
 
     test("GET should succeed", async() => {
@@ -291,9 +293,9 @@ describe("assignment to condition tested with many users", () => {
         }
 
         for (const u of users) {
-            await docClient.put({TableName: process.env.USERS_TABLE, Item: u}).promise();
+            await docClient.send(new PutCommand({TableName: process.env.USERS_TABLE, Item: u}));
         }
-        const allUsers = await docClient.scan({TableName: process.env.USERS_TABLE}).promise();
+        const allUsers = await docClient.send(new ScanCommand({TableName: process.env.USERS_TABLE}));
         expect(allUsers.Count).toBe(users.length);
 
         const randGender = () => Math.random() < 0.5 ? 'Male' : 'Female';
@@ -303,7 +305,7 @@ describe("assignment to condition tested with many users", () => {
             expect(result.statusCode).toBe(200);
         }
 
-        const result = await docClient.scan({TableName: process.env.USERS_TABLE}).promise();
+        const result = await docClient.send(new ScanCommand({TableName: process.env.USERS_TABLE}));
         males = result.Items.filter(i => i.condition.assignedSex === 'Male');
         females = result.Items.filter(i => i.condition.assignedSex === 'Female');
         expect(males.length + females.length).toEqual(users.length);
@@ -423,7 +425,7 @@ describe("getting emotional pictures for a participant", () => {
                 ExpressionAttributeValues: { ':date': dayjs().tz('America/Los_Angeles').format('YYYY-MM-DDTHH:mm:ssZ[Z]') }
             };
 
-            await docClient.update(params).promise();
+            await docClient.send(new UpdateCommand(params));
         }
     });
 
@@ -572,7 +574,7 @@ async function fetchUser(userId) {
             userId: userId
         }
     };
-    const userRec = await docClient.get(params).promise();
+    const userRec = await docClient.send(new GetCommand(params));
     return userRec.Item;
 }
 
@@ -582,15 +584,15 @@ async function fetchAllEmopics(userId) {
         KeyConditionExpression: "userId = :idKey",
         ExpressionAttributeValues: { ":idKey": userId }
     };
-    const emopics = await docClient.query(params).promise();
+    const emopics = await docClient.send(new QueryCommand(params));
     return emopics.Items;
 }
 
 async function loadAndConfirmUsers(users, targetSex, expectedTargetSexCount) {
     for (const u of users) {
-        await docClient.put({TableName: process.env.USERS_TABLE, Item: u}).promise();
+        await docClient.send(new PutCommand({TableName: process.env.USERS_TABLE, Item: u}));
     }
-    const allUsers = await docClient.scan({TableName: process.env.USERS_TABLE}).promise();
+    const allUsers = await docClient.send(new ScanCommand({TableName: process.env.USERS_TABLE}));
     expect(allUsers.Count).toBe(users.length);
     const targetUsers = allUsers.Items.filter(u => u.condition && u.condition.assignedSex === targetSex);
     expect(targetUsers.length).toBe(expectedTargetSexCount);

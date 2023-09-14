@@ -1,6 +1,6 @@
 import Db from 'db/db.js';
 import awsSettings from "../../../common/aws-settings.json";
-const AWS = require("aws-sdk");
+import { dynamoDocClient as docClient } from '../common/aws-clients';
 
 const region = process.env.REGION;
 const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
@@ -10,12 +10,6 @@ exports.handler = async (event, context, callback) => {
 
     if (event.request.clientMetadata && 
         event.request.clientMetadata.envelopeId) {
-            const docClient = new AWS.DynamoDB.DocumentClient({
-                endpoint: dynamoEndpoint,
-                apiVersion: "2012-08-10",
-                region: region,
-            });
-        
             const db = new Db();
             db.docClient = docClient;
             

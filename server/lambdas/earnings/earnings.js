@@ -1,7 +1,4 @@
-const AWS = require("aws-sdk");
-const region = process.env.REGION;
-const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
-const docClient = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region});
+import { dynamoDocClient as docClient } from "../common/aws-clients.js";
 const timezone = require('dayjs/plugin/timezone');
 const utc = require('dayjs/plugin/utc');
 dayjs.extend(utc);

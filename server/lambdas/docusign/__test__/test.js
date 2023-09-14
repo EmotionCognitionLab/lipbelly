@@ -1,6 +1,6 @@
 'use strict';
 import { signingDone, getSigningInfo } from "../docusign.js";
-import { sqsClient } from "../aws-clients.js";
+import { sqsClient } from "../../common/aws-clients.js";
 
 const mockSaveDsSigningInfo = jest.fn();
 const mockGetDsSigningInfo = jest.fn();
@@ -14,7 +14,7 @@ jest.mock('db/db', () => {
 });
 
 const mockSendMessage = jest.fn();
-jest.mock("../aws-clients.js");
+jest.mock("../../common/aws-clients.js");
 sqsClient.sendMessage = mockSendMessage;
 
 const user = {

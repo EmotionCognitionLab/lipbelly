@@ -1,23 +1,13 @@
 "use strict";
 
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, QueryCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb'
+import { GetObjectCommand } from '@aws-sdk/client-s3'
+import { QueryCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb'
+import { s3Client as s3 , dynamoDocClient as docClient } from '../common/aws-clients';
 import Database from 'better-sqlite3';
 import { mkdtemp, rm, writeFile } from 'fs/promises';
 const path = require('path');
 
-const s3 = new S3Client({
-  apiVersion: '2006-03-01',
-  region: process.env.AWSREGION,
-  endpoint: process.env.S3_ENDPOINT,
-  forcePathStyle: true
-});
-
-const region = process.env.REGION;
 const segmentsTable = process.env.SEGMENTS_TABLE;
-const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
-const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region}));
 
 export async function savesegments(event) {
     const record = event.Records[0];

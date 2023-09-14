@@ -5,12 +5,9 @@
  * user information from Cognito to Dynamo.
  **/
 
-const AWS = require('aws-sdk');
-
-const region = process.env.REGION;
 const usersTable = process.env.USERS_TABLE;
-const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
-const dynamo = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: '2012-08-10', region: region});
+import { dynamoDocClient as docClient } from '../common/aws-clients';
+import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
 exports.handler = async (event) => {
     // make sure that we don't run this code when the user is 
@@ -19,7 +16,7 @@ exports.handler = async (event) => {
 
     const userRec = buildUserRecord(event);
     try {
-        await dynamo.put(userRec).promise();
+        await docClient.send(new PutCommand(userRec));
         return event;
     } catch (err) {
         console.log(err);

@@ -6,10 +6,10 @@ const th = require('../../common-test/test-helper.js');
 import { readFile, mkdtemp, unlink } from 'fs/promises';
 const os = require('os');
 const lambdaLocal = require("lambda-local");
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb'
-
-const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: '2012-08-10', region: process.env.REGION}));
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+const dynClient = new DynamoDBClient({region: process.env.REGION, endpoint: process.env.DYNAMO_ENDPOINT, apiVersion: "2012-08-10"});
+const docClient = DynamoDBDocumentClient.from(dynClient);
 const Database = require('better-sqlite3');
 
 const theUserId = 'RedInfo';

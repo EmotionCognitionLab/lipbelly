@@ -313,6 +313,16 @@ custom:
     includeModules:
       forceExclude:
         - aws-sdk
+        - "@aws-sdk"
+        - "@aws-sdk/client-cognito-identity-provider"
+        - "@aws-sdk/client-dynamodb"
+        - "@aws-sdk/client-s3"
+        - "@aws-sdk/client-ses"
+        - "@aws-sdk/client-sqs"
+        - "@aws-sdk/credential-providers"
+        - "@aws-sdk/lib-dynamodb"
+        - "@aws-sdk/types"
+        - "@smithy"
         - better-sqlite3
   siteUrl:
     dev: 'https://dev.mindbodystudy.org'
