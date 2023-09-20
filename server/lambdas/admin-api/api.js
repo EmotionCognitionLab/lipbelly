@@ -66,9 +66,9 @@ exports.handler = async(event) => {
  */
 async function getUserStatus(participantId, db) {
     const segments = await db.segmentsForUser(participantId, 2);
-    const days = segments.map(s => {
-        dayjs(s.endDateTime * 1000).tz('America/Los_Angeles').format('YYYYMMDD');
-    });
+    const days = segments.map(s => 
+        dayjs.unix(s.endDateTime).tz('America/Los_Angeles').format('YYYYMMDD')
+    );
     const countByDay = days.reduce((accum, cur) => {
         let count = accum[cur] ?? 0;
         count++;
