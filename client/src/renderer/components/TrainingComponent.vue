@@ -23,7 +23,7 @@
                         <div class="instruction">Terrific! Please wait while we upload your data...</div>
                     </template>
                     <template #postUploadText>
-                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < 3 ? 'later today' :'tomorrow' }} for more practice.</div>
+                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < 4 ? 'later today' :'tomorrow' }} for more practice.</div>
                         <br/>
                         <button class="button" @click="quit">Quit</button>
                     </template>
@@ -51,7 +51,7 @@
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
         await countTodaySegs()
-        breathingDone.value = todaySegCount.value >= 3
+        breathingDone.value = todaySegCount.value >= 4
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
         const data = await apiClient.getSelf()
