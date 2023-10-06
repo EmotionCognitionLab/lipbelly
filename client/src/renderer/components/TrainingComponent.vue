@@ -1,10 +1,10 @@
 <template>
     <div>
-        <div id="emopics" v-if="!hasDoneEmoMem">
+        <div id="emopics" v-if="!hasDoneEmoMem && !noTime">
             <EmoMemComponent @finished="hasDoneEmoMem=true"/>
         </div>
         <div v-else>
-            <div id="instructions" v-if="!instructionsRead && !breathingDone">
+            <div id="instructions" v-if="!instructionsRead && !breathingDone && !noTime">
                 Please make sure to:<br/>
                 <ul>
                     <li>plug the USB ear sensor into the laptop</li>
@@ -14,10 +14,15 @@
                 <br/>
                 <button @click="instructionsRead=true">Continue</button>
             </div>
-            <div id="breathing" v-if="instructionsRead && !breathingDone">
+            <div id="breathing" v-if="instructionsRead && !breathingDone && !noTime">
                 <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()" />
             </div>
-            <div id="upload" v-if="breathingDone">
+            <div id="notime" v-if="noTime">
+                You don't have enough time to complete another session today. Please come back tomorrow.
+                <br/>
+                <button class="button" @click="quit">Quit</button>
+            </div>
+            <div id="upload" v-if="breathingDone && !noTime">
                 <UploadComponent>
                     <template #preUploadText>
                         <div class="instruction">Terrific! Please wait while we upload your data...</div>
@@ -44,6 +49,7 @@
     const hasDoneEmoMem = ref(false)
     const instructionsRead = ref(false)
     const breathingDone = ref(false)
+    const noTime = ref(false)
     const todaySegCount = ref(0)
     const audioSrc = ref(null)
     const stage = 2
@@ -60,6 +66,15 @@
         if (segsRemaining == 1) {
             sessionDuration.value = 600
         }
+        const sessionMinutes = sessionDuration.value / 60
+
+        const now = new Date()
+        const midnight = new Date()
+        midnight.setHours(23); midnight.setMinutes(59); midnight.setSeconds(59);
+        const minutesRemainingToday = (midnight - now) / (1000 * 60)
+        noTime.value = minutesRemainingToday < sessionMinutes
+        if (noTime.value) return // audio won't matter; they aren't doing any more today
+
         audioSrc.value = await selectAudio()
     })
 
