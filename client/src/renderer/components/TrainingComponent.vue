@@ -50,7 +50,7 @@
 
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
-        await countTodaySegs()
+        await updateTodaySegCount()
         breathingDone.value = todaySegCount.value >= 4
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
@@ -65,7 +65,7 @@
         }
     })
 
-    async function countTodaySegs() {
+    async function updateTodaySegCount() {
         const todayStart = new Date()
         todayStart.setHours(0); todayStart.setMinutes(0); todayStart.setSeconds(0);
         const todaySegs = await window.mainAPI.getSegmentsAfterDate(todayStart, stage)
@@ -73,7 +73,7 @@
     }
 
     async function sessionDone() {
-        await countTodaySegs()
+        await updateTodaySegCount()
         breathingDone.value = true
     }
 
