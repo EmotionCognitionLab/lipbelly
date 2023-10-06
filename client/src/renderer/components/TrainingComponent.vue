@@ -15,7 +15,7 @@
                 <button @click="instructionsRead=true">Continue</button>
             </div>
             <div id="breathing" v-if="instructionsRead && !breathingDone">
-                <RestComponent :totalDurationSeconds=1200 :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()" />
+                <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()" />
             </div>
             <div id="upload" v-if="breathingDone">
                 <UploadComponent>
@@ -23,7 +23,7 @@
                         <div class="instruction">Terrific! Please wait while we upload your data...</div>
                     </template>
                     <template #postUploadText>
-                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < 4 ? 'later today' :'tomorrow' }} for more practice.</div>
+                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < segsPerDay ? 'later today' :'tomorrow' }} for more practice.</div>
                         <br/>
                         <button class="button" @click="quit">Quit</button>
                     </template>
@@ -47,23 +47,35 @@
     const todaySegCount = ref(0)
     const audioSrc = ref(null)
     const stage = 2
+    const segsPerDay = ref(4)
+    const sessionDuration = ref(1200)
 
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
         await updateTodaySegCount()
-        breathingDone.value = todaySegCount.value >= 4
+        breathingDone.value = todaySegCount.value >= segsPerDay.value
+        if (breathingDone.value) return // sessionDuration and audio don't matter; they're done for the day
+
+        const segsRemaining = segsPerDay.value - todaySegCount.value
+        if (segsRemaining == 1) {
+            sessionDuration.value = 600
+        }
+        audioSrc.value = await selectAudio()
+    })
+
+    async function selectAudio() {
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
         const data = await apiClient.getSelf()
         if (data.condition.assigned === 'A') {
-            audioSrc.value = `${awsSettings.ImagesUrl}/assets/l.m4a`
+            return `${awsSettings.ImagesUrl}/assets/l.m4a`
         } else if (data.condition.assigned === 'B') {
-            audioSrc.value = `${awsSettings.ImagesUrl}/assets/b.m4a`
+            return `${awsSettings.ImagesUrl}/assets/b.m4a`
         } else {
             console.error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
             throw new Error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
         }
-    })
+    }
 
     async function updateTodaySegCount() {
         const todayStart = new Date()
