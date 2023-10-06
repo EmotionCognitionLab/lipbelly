@@ -6910,7 +6910,7 @@ __metadata:
     del: ^3.0.0
     deploytools: ../common/deploytools
     devtron: ^1.4.0
-    electron: ^25.0.1
+    electron: v26.3.0
     electron-builder: ^23.6.0
     electron-debug: ^3.2.0
     electron-devtools-installer: ^3.2.0
@@ -8654,16 +8654,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron@npm:^25.0.1":
-  version: 25.1.0
-  resolution: "electron@npm:25.1.0"
+"electron@npm:v26.3.0":
+  version: 26.3.0
+  resolution: "electron@npm:26.3.0"
   dependencies:
     "@electron/get": ^2.0.0
     "@types/node": ^18.11.18
     extract-zip: ^2.0.1
   bin:
     electron: cli.js
-  checksum: 411af45997f9b27d3981c16285e5f393abf265efde4aaa20c41e76e2a9e959fed4247b7621459682c3b91e60d31b0658659c232fc7ff79a8e28e92d694f89ade
+  checksum: e904f7a7a3281d0cbf899ce06199f71dd7db9553f6650a7a2dda5001e3a4026933554ce44da2f3106500623aa28a10e4b5f9b42599f5442af11983f032d18275
   languageName: node
   linkType: hard
 
