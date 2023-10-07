@@ -1,4 +1,4 @@
-import { dynamoDocClient, sesClient, cognitoClient } from "./aws-clients.js";
+import { dynamoDocClient, sesClient, cognitoClient } from "../common/aws-clients.js";
 import Db from 'db/db.js';
 import awsSettings from "../../../common/aws-settings.json";
 

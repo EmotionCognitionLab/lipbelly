@@ -1,5 +1,5 @@
 import Db from 'db/db.js';
-import { docClient, sqsClient } from './aws-clients';
+import { dynamoDocClient as docClient, sqsClient } from '../common/aws-clients';
 import awsSettings from "../../../common/aws-settings.json";
 
 const sqsQueueUrl = process.env.REGISTRATION_SQS_QUEUE;

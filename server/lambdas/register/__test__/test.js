@@ -1,7 +1,7 @@
 
 'use strict';
 import { signUp, sendEmails } from "../register.js";
-import { sesClient, cognitoClient } from "../aws-clients.js";
+import { sesClient, cognitoClient } from "../../common/aws-clients.js";
 
 const mockSendEmail = jest.fn();
 const mockCognitoSignUp = jest.fn();
@@ -19,7 +19,7 @@ jest.mock('db/db', () => {
     });
 });
 
-jest.mock("../aws-clients.js");
+jest.mock("../../common/aws-clients.js");
 sesClient.sendEmail = mockSendEmail;
 cognitoClient.signUp = mockCognitoSignUp;
 

@@ -70,11 +70,11 @@ ipcMain.on('current-user', (_event, user) => {
 
 function notifyAvgCoherence() {
     try {
-        // we need a minimum of three minutes of data and we get
+        // we need a minimum of five minutes of data and we get
         // (ideally) two values per second
-        const min_values = 2 * 60 * 3;
+        const min_values = 2 * 60 * 5;
         if (coherenceValues.length < min_values) {
-            logger.error(`Regime ${JSON.stringify(curRegime)} starting at ${curSegmentStartMsOffset} has ended but there are less than three minutes of data (${coherenceValues.length} coherence values). Unable to report average coherence.`);
+            logger.error(`Regime ${JSON.stringify(curRegime)} starting at ${curSegmentStartMsOffset} has ended but there are less than five minutes of data (${coherenceValues.length} coherence values). Unable to report average coherence.`);
             return;
         }
 

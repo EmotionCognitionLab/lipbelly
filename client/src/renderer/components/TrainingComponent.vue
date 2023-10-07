@@ -1,10 +1,10 @@
 <template>
     <div>
-        <div id="emopics" v-if="!hasDoneEmoMem">
+        <div id="emopics" v-if="!hasDoneEmoMem && !noTime">
             <EmoMemComponent @finished="hasDoneEmoMem=true"/>
         </div>
         <div v-else>
-            <div id="instructions" v-if="!instructionsRead && !breathingDone">
+            <div id="instructions" v-if="!instructionsRead && !breathingDone && !noTime">
                 Please make sure to:<br/>
                 <ul>
                     <li>plug the USB ear sensor into the laptop</li>
@@ -14,16 +14,21 @@
                 <br/>
                 <button @click="instructionsRead=true">Continue</button>
             </div>
-            <div id="breathing" v-if="instructionsRead && !breathingDone">
-                <RestComponent :totalDurationSeconds=1200 :segmentDurationSeconds=600 @timerFinished="sessionDone()" />
+            <div id="breathing" v-if="instructionsRead && !breathingDone && !noTime">
+                <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()" />
             </div>
-            <div id="upload" v-if="breathingDone">
+            <div id="notime" v-if="noTime">
+                You don't have enough time to complete another session today. Please come back tomorrow.
+                <br/>
+                <button class="button" @click="quit">Quit</button>
+            </div>
+            <div id="upload" v-if="breathingDone && !noTime">
                 <UploadComponent>
                     <template #preUploadText>
                         <div class="instruction">Terrific! Please wait while we upload your data...</div>
                     </template>
                     <template #postUploadText>
-                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < 3 ? 'later today' :'tomorrow' }} for more practice.</div>
+                            <div class="instruction">Upload complete. Nice work! Please come back {{ todaySegCount < segsPerDay ? 'later today' :'tomorrow' }} for more practice.</div>
                         <br/>
                         <button class="button" @click="quit">Quit</button>
                     </template>
@@ -37,20 +42,57 @@
     import EmoMemComponent from './EmoMemComponent.vue'
     import RestComponent from './RestComponent.vue'
     import UploadComponent from './UploadComponent.vue'
+    import { SessionStore } from '../../session-store'
+    import ApiClient from '../../../../common/api/client';
+    import awsSettings from '../../../../common/aws-settings.json'
 
     const hasDoneEmoMem = ref(false)
     const instructionsRead = ref(false)
     const breathingDone = ref(false)
+    const noTime = ref(false)
     const todaySegCount = ref(0)
+    const audioSrc = ref(null)
     const stage = 2
+    const segsPerDay = ref(4)
+    const sessionDuration = ref(1200)
 
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
-        await countTodaySegs()
-        breathingDone.value = todaySegCount.value >= 3
+        await updateTodaySegCount()
+        breathingDone.value = todaySegCount.value >= segsPerDay.value
+        if (breathingDone.value) return // sessionDuration and audio don't matter; they're done for the day
+
+        const segsRemaining = segsPerDay.value - todaySegCount.value
+        if (segsRemaining == 1) {
+            sessionDuration.value = 600
+        }
+        const sessionMinutes = sessionDuration.value / 60
+
+        const now = new Date()
+        const midnight = new Date()
+        midnight.setHours(23); midnight.setMinutes(59); midnight.setSeconds(59);
+        const minutesRemainingToday = (midnight - now) / (1000 * 60)
+        noTime.value = minutesRemainingToday < sessionMinutes
+        if (noTime.value) return // audio won't matter; they aren't doing any more today
+
+        audioSrc.value = await selectAudio()
     })
 
-    async function countTodaySegs() {
+    async function selectAudio() {
+        const session = await SessionStore.getRendererSession()
+        const apiClient = new ApiClient(session)
+        const data = await apiClient.getSelf()
+        if (data.condition.assigned === 'A') {
+            return `${awsSettings.ImagesUrl}/assets/l.m4a`
+        } else if (data.condition.assigned === 'B') {
+            return `${awsSettings.ImagesUrl}/assets/b.m4a`
+        } else {
+            console.error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
+            throw new Error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
+        }
+    }
+
+    async function updateTodaySegCount() {
         const todayStart = new Date()
         todayStart.setHours(0); todayStart.setMinutes(0); todayStart.setSeconds(0);
         const todaySegs = await window.mainAPI.getSegmentsAfterDate(todayStart, stage)
@@ -58,7 +100,7 @@
     }
 
     async function sessionDone() {
-        await countTodaySegs()
+        await updateTodaySegCount()
         breathingDone.value = true
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "db",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "API for LipBelly db access",
   "main": "db.js",
   "scripts": {
@@ -18,7 +18,9 @@
   },
   "homepage": "https://github.com/EmotionCognitionLab/lipbelly#readme",
   "dependencies": {
-    "aws-sdk": "^2.929.0",
+    "@aws-sdk/client-dynamodb": "^3.410.0",
+    "@aws-sdk/credential-providers": "^3.410.0",
+    "@aws-sdk/lib-dynamodb": "^3.410.0",
     "util": "^0.12.4"
   },
   "devDependencies": {

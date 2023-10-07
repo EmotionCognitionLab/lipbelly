@@ -12,7 +12,8 @@
     "pack": "npm run pack:main && npm run pack:renderer",
     "postinstall": "npm run lint:fix && ./node_modules/.bin/electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
-    "test": "ELECTRON_RUN_AS_NODE=true ./node_modules/.bin/electron ./node_modules/.bin/jest"
+    "test": "ELECTRON_RUN_AS_NODE=true ./node_modules/.bin/electron ./node_modules/.bin/jest",
+    "deploy": "node scripts/pre-deploy.js $0 && node scripts/version-deploy.js && yarn run test && yarn electron:build && node scripts/tag-deploy.js"
   },
   "jest": {
     "transform": {
@@ -55,8 +56,9 @@
     "cross-env": "^5.1.6",
     "css-loader": "^0.28.11",
     "del": "^3.0.0",
+    "deploytools": "../common/deploytools",
     "devtron": "^1.4.0",
-    "electron": "^25.0.1",
+    "electron": "v26.3.0",
     "electron-builder": "^23.6.0",
     "electron-debug": "^3.2.0",
     "electron-devtools-installer": "^3.2.0",

@@ -1,7 +1,15 @@
 module.exports = {
     target: 'node',
     externals: [
-      'better-sqlite3'
+      'better-sqlite3',
+      '@aws-sdk/client-cognito-identity-provider',
+      '@aws-sdk/client-dynamodb',
+      '@aws-sdk/client-s3',
+      '@aws-sdk/client-ses',
+      '@aws-sdk/client-sqs',
+      '@aws-sdk/credential-providers',
+      '@aws-sdk/lib-dynamodb',
+      '@aws-sdk/types'
     ],
     module: {
         rules: [

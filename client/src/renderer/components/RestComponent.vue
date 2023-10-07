@@ -22,7 +22,7 @@ import EmWaveListener from './EmWaveListener.vue'
 import TimerComponent from './TimerComponent.vue'
 import { CountdownTimer } from '../../countdown-timer'
 
-const props = defineProps({totalDurationSeconds: Number, segmentDurationSeconds: { type: Number, default: -1 }})
+const props = defineProps({totalDurationSeconds: Number, segmentDurationSeconds: { type: Number, default: -1 }, audioSrc: String})
 const emwaveListener = ref(null)
 const timer = ref(null)
 const done = ref(false)
@@ -30,6 +30,7 @@ const emit = defineEmits(['timer-finished'])
 let timerDone = false
 let segmentTimer = null
 let remainingSegmentCount = 0
+let audio = null
 
 onMounted(() => {
     if (props.segmentDurationSeconds > 0) {
@@ -39,11 +40,21 @@ onMounted(() => {
             segmentTimer.subscribe(saveSegmentAverageCoherence)
         } 
     }
+
+    if (props.audioSrc) {
+        audio = new Audio(props.audioSrc)
+        audio.addEventListener('error', (err) => { 
+            console.error('audio errored', err)
+            console.log('audio err code', audio.error.code)
+            console.log('audio err msg', audio.error.message)
+        })
+    }
 })
 
 async function startTimer() {
     timer.value.running = true
     if (segmentTimer) segmentTimer.start()
+    if (audio) audio.play()
 }
 
 function sensorStopped() {
@@ -53,20 +64,35 @@ function sensorStopped() {
         // which means we're totally done here
         emit('timer-finished')
         done.value = true
+        if (audio) {
+            audio.pause()
+            audio.currentTime = 0
+        }
     }
     timer.value.running = false
     if (segmentTimer) segmentTimer.stop()
+    if (audio) {
+        audio.pause()
+    }
 }
 
 function resetTimer() {
     timer.value.reset()
     if (segmentTimer) segmentTimer.reset()
+    if (audio) {
+        audio.pause()
+        audio.currentTime = 0
+    }
 }
 
 function stopSession() {
     timerDone = true
     emwaveListener.value.stopSensor = true
     if (segmentTimer) segmentTimer.stop()
+    if (audio) {
+        audio.pause()
+        audio.currentTime = 0
+    }
 }
 
 function saveSegmentAverageCoherence() {

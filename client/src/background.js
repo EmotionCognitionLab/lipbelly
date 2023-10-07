@@ -10,6 +10,7 @@ import { breathDbPath, closeBreathDb, getKeyValue, setKeyValue, getRestBreathing
 import { emWaveDbPath, deleteShortSessions as deleteShortEmwaveSessions } from './emwave-data'
 import emwave from './emwave'
 import { SessionStore } from './session-store.js'
+import version from "../version.json"
 import s3Utils from './s3utils.js'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -18,6 +19,11 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+app.setAboutPanelOptions({
+  applicationName: "MindBody Study",
+  applicationVersion: version.v
+})
 
 async function createWindow() {
   // Create the browser window.

@@ -1,9 +1,7 @@
-const AWS = require("aws-sdk");
-const region = process.env.REGION;
+import { QueryCommand, UpdateCommand, ScanCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
+import { dynamoDocClient as docClient } from "../common/aws-clients.js";
 const usersTable = process.env.USERS_TABLE;
 const emopicsTable = process.env.EMOPICS_TABLE;
-const dynamoEndpoint = process.env.DYNAMO_ENDPOINT;
-const docClient = new AWS.DynamoDB.DocumentClient({endpoint: dynamoEndpoint, apiVersion: "2012-08-10", region: region});
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -105,7 +103,7 @@ const updateSelf = async(userId, updates) => {
             ExpressionAttributeNames: expressionAttrNames,
             ExpressionAttributeValues: expressionAttrVals
         };
-        await docClient.update(params).promise();
+        await docClient.send(new UpdateCommand(params));
         return successResponse({msg: "update successful"});
     } catch (err) {
         console.error(err);
@@ -161,7 +159,7 @@ const assignToCondition = async(userId, data) => {
             ExpressionAttributeValues: {':as': assignedSex }
         };
 
-        const result = await docClient.scan(params).promise();
+        const result = await docClient.send(new ScanCommand(params));
         let condition;
         if (result.Count % 2 === 0) {
             // randomly assign to condition
@@ -207,7 +205,7 @@ const assignToCondition = async(userId, data) => {
             ExpressionAttributeNames: { '#condition': 'condition' },
             ExpressionAttributeValues: { ':condition': conditionData }
         };
-        await docClient.update(conditionParams).promise();
+        await docClient.send(new UpdateCommand(conditionParams));
         return successResponse({condition: condition});
     } catch (err) {
         console.error(err);
@@ -264,7 +262,7 @@ const setEmopics = async(userId, emopics) => {
             const chunk = chunks[i];
             const params = { RequestItems: {} };
             params['RequestItems'][emopicsTable] = chunk;
-            await docClient.batchWrite(params).promise();
+            await docClient.send(new BatchWriteCommand(params));
         }
 
         return successResponse({msg: "Save successful"});
@@ -297,7 +295,7 @@ const getEmopicsForUser = async (userId, used, count) => {
             } else {
                 params['FilterExpression'] = "attribute_not_exists(#date)";
             }
-            dynResults = await docClient.query(params).promise();
+            dynResults = await docClient.send(new QueryCommand(params));
             ExclusiveStartKey = dynResults.LastEvaluatedKey;
             allResults.push(...dynResults.Items.map(i => ({file: i.file, order: i.order, date: i.date, skipped: i.skipped})));
         } while (dynResults.LastEvaluatedKey && allResults.length < maxItems)
@@ -329,7 +327,7 @@ const markEmopicsSkippedForUser = async (userId, emopics) => {
                 ExpressionAttributeNames: {'#date': 'date'},
                 ExpressionAttributeValues: {':true': true, ':date': fullDate}
             };
-            await docClient.update(params).promise();
+            await docClient.send(new UpdateCommand(params));
         } catch (err) {
             console.error(`Failed to set skipped=true, date=${date} for emopic with userId ${userId}, order: ${order}.`, err);
             lastErr = err;
@@ -360,7 +358,7 @@ const saveEmopicsRating = async(userId, order, rating, responseTime, date) => {
         ExpressionAttributeValues: { ':rating': rating, ':date': date, ':responseTime': responseTime }
     };
     try {
-        await docClient.update(params).promise();
+        await docClient.send(new UpdateCommand(params));
         return successResponse({msg: "Update successful"});
     } catch (err) {
         console.error(`Failed to set rating=${rating}, date=${date} for emopic with userId ${userId}, order: ${order}.`, err);
@@ -377,7 +375,7 @@ async function getUserById(userId) {
         KeyConditionExpression: "userId = :idKey",
         ExpressionAttributeValues: { ":idKey": userId }
     };
-    const dynResults = await docClient.query(params).promise();
+    const dynResults = await docClient.send(new QueryCommand(params));
     if (dynResults.Items.length === 0) {
         return {};
     }

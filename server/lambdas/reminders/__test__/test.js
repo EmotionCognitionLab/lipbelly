@@ -118,18 +118,18 @@ describe("home training reminders", () => {
         expect(mockGetAllUsers).toHaveBeenCalledTimes(1);
         expect(mockSegmentsForUser.mock.calls[0][0]).toBe(defaultUser.userId);
         expect(mockSegmentsForUser.mock.calls[0][1]).toBe(2);
-        expect(mockSegmentsForUser.mock.calls[0][2].toString().substring(0, 15)).toBe(dayjs().tz('America/Los_Angeles').toDate().toString().substring(0, 15));
+        expect(mockSegmentsForUser.mock.calls[0][2].toString().substring(0, 15)).toBe(dayjs().tz('America/Los_Angeles').startOf('day').toDate().toString().substring(0, 15));
     }
 
     it("should not be sent if the participant has dropped out", async () => {
-        const droppedUser =  { userId: '123abc', humanId: 'BigText', email: 'nobody@example.com', progress: { dropped: true }};
-        mockGetAllUsers.mockImplementationOnce(() => [droppedUser]);
+        const droppedUser =  { userId: '456def', humanId: 'BigText', email: 'dropped@example.com', progress: { dropped: true }};
+        mockGetAllUsers.mockImplementationOnce(() => [droppedUser, defaultUser]);
         await handler({commType: 'email', reminderType: 'homeTraining'});
         expect(mockGetAllUsers).toHaveBeenCalledTimes(1);
-        expect(mockSegmentsForUser.mock.calls[0][0]).toBe(droppedUser.userId);
+        expect(mockSegmentsForUser.mock.calls[0][0]).toBe(defaultUser.userId);
         expect(mockSegmentsForUser.mock.calls[0][1]).toBe(2);
-        expect(mockSegmentsForUser.mock.calls[0][2].toString().substring(0, 15)).toBe(dayjs().tz('America/Los_Angeles').toDate().toString().substring(0, 15));
-        expect(mockSESClient.commandCalls(SendEmailCommand).length).toBe(0);
+        expect(mockSegmentsForUser.mock.calls[0][2].toString().substring(0, 15)).toBe(dayjs().tz('America/Los_Angeles').startOf('day').toDate().toString().substring(0, 15));
+        expect(mockSESClient.commandCalls(SendEmailCommand).length).toBe(1);
         expect(mockSNSClient.commandCalls(PublishCommand).length).toBe(0);
     });
 });

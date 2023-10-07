@@ -3,8 +3,9 @@
  */
 
  import awsSettings from '../aws-settings.json';
- import AWS from 'aws-sdk/global.js';
- import DynamoDB from 'aws-sdk/clients/dynamodb.js';
+ import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
+ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+ import { DynamoDBDocumentClient, ScanCommand, QueryCommand, UpdateCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
  import { Logger } from "../logger/logger.js";
  import { getAuth } from "../auth/auth.js";
  import { earningsTypes } from "../types/types.js";
@@ -27,7 +28,8 @@ export default class Db {
         this.segmentsTable = options.segmentsTable || awsSettings.SegmentsTable;
         this.session = options.session || null;
         if (!options.session) {
-            this.docClient = new DynamoDB.DocumentClient({region: this.region});
+            const dynClient = new DynamoDBClient({region: this.region});
+            this.docClient = DynamoDBDocumentClient.from(dynClient);
         }
         this.logger = new Logger(false);
         this.logger.init(); // TODO figure out how we can await this
@@ -42,13 +44,15 @@ export default class Db {
          if (!sess) return;
 
         this.idToken = sess.getIdToken().getJwtToken();
-        this.credentials = new AWS.CognitoIdentityCredentials({
-            IdentityPoolId: this.identityPoolId,
-            Logins: {
+        this.credentials = fromCognitoIdentityPool({
+            identityPoolId: this.identityPoolId,
+            logins: {
                 [`cognito-idp.${this.region}.amazonaws.com/${this.userPoolId}`]: this.idToken
-            }
-        }, {region: this.region});
-        this.docClient = new DynamoDB.DocumentClient({region: this.region, credentials: this.credentials});
+            },
+            clientConfig: {region: this.region}
+        });
+        const dynClient = new DynamoDBClient({region: this.region,  credentials: this.credentials});
+        this.docClient = DynamoDBDocumentClient.from(dynClient);
         this.subId = this.constructor.getSubIdFromSession(sess);
      }
 
@@ -255,13 +259,13 @@ export default class Db {
                 }
                 switch(fnName) {
                     case 'query':
-                        return await this.docClient.query(params).promise();
+                        return await this.docClient.send(new QueryCommand(params));
                     case 'scan':
-                        return await this.docClient.scan(params).promise();
+                        return await this.docClient.send(new ScanCommand(params));
                     case 'update':
-                        return await this.docClient.update(params).promise();
+                        return await this.docClient.send(new UpdateCommand(params));
                     case 'batchWrite': 
-                        return await this.docClient.batchWrite(params).promise();
+                        return await this.docClient.send(new BatchWriteCommand(params));
                     default:
                         throw new Error(`Unknown operation ${fnName}`);
                 }
@@ -371,7 +375,7 @@ export default class Db {
         try {
             this.isRefreshing = true;
             try {
-                await this.credentials.getPromise();
+                await this.credentials.refresh();
             } catch (refreshErr) {
                 if (refreshErr.code === 'NotAuthorizedException') {
                     this.session = await this.refreshSession();
