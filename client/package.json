@@ -13,7 +13,7 @@
     "postinstall": "npm run lint:fix && ./node_modules/.bin/electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "test": "ELECTRON_RUN_AS_NODE=true ./node_modules/.bin/electron ./node_modules/.bin/jest",
-    "deploy": "node scripts/pre-deploy.js $0 && node scripts/version-deploy.js && yarn run test && yarn electron:build && node scripts/tag-deploy.js"
+    "deploy": "node scripts/pre-deploy.js $0 && node scripts/version-deploy.js && yarn run jest && yarn electron:build && node scripts/tag-deploy.js"
   },
   "jest": {
     "transform": {
