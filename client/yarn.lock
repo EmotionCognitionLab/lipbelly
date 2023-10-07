@@ -8163,10 +8163,10 @@ __metadata:
 
 "deploytools@file:../common/deploytools::locator=client%40workspace%3A.":
   version: 1.0.0
-  resolution: "deploytools@file:../common/deploytools#../common/deploytools::hash=b109ea&locator=client%40workspace%3A."
+  resolution: "deploytools@file:../common/deploytools#../common/deploytools::hash=fafd81&locator=client%40workspace%3A."
   dependencies:
     prompt: ^1.3.0
-  checksum: 95884e6b8f3b0401bb25523dec39b12c2c4ab93d6a7a728a739385840c8516abde3055bcceaaa30a50a77374956a3d2270439b2085f2a9513f05d9f0a7d9fe87
+  checksum: b700c97a62c2a28eb690a958a645c2a9646794d0544a88cf72a25e29da7f80ece01a7c71e4a5e2d4728999f25e4efac2df78bec92cc471f95bf07940cb08084a
   languageName: node
   linkType: hard
 
