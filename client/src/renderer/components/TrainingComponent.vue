@@ -75,20 +75,29 @@
         noTime.value = minutesRemainingToday < sessionMinutes
         if (noTime.value) return // audio won't matter; they aren't doing any more today
 
-        audioSrc.value = await selectAudio()
+        audioSrc.value = await selectAudio(sessionMinutes)
     })
 
-    async function selectAudio() {
+    async function selectAudio(sessionMinutes) {
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
         const data = await apiClient.getSelf()
+        let file
         if (data.condition.assigned === 'A') {
-            return `${awsSettings.ImagesUrl}/assets/l.m4a`
+            file = 'l.m4a'
         } else if (data.condition.assigned === 'B') {
-            return `${awsSettings.ImagesUrl}/assets/b.m4a`
+            file = 'b.m4a'
         } else {
             console.error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
             throw new Error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
+        }
+        if (sessionMinutes == 10) {
+            return `${awsSettings.ImagesUrl}/assets/10_${file}`
+        } else if (sessionMinutes == 20) {
+            return `${awsSettings.ImagesUrl}/assets/20_${file}`
+        } else {
+            console.error(`Expected session to be 10 or 20 minutes long, but got ${sessionMinutes} minutes.`)
+            throw new Error(`Expected session to be 10 or 20 minutes long, but got ${sessionMinutes} minutes.`)
         }
     }
 
