@@ -2,7 +2,7 @@
     <div class="instruction" v-if="!done">
         <slot name="preText">
             When you are ready to begin please press the start button.
-            Please remember to sit on a chair with your feet flat on the floor and hands resting on your legs. Please rest and do not do anything during this portion.
+            Please get into a comfortable position on a chair or on a pillow, finding a position with your back and neck upright. Please rest and do not do anything during this portion.
         </slot>
         <EmWaveListener :showIbi=false @pulseSensorCalibrated="startTimer" @pulseSensorStopped="sensorStopped" @pulseSensorSignalLost="sensorStopped" @pulseSensorSignalRestored="startTimer" @pulseSensorSessionEnded="resetTimer" ref="emwaveListener"/> 
         <br/>
