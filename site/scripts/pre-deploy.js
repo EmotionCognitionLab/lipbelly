@@ -13,7 +13,7 @@ const path = require('path');
  */
  const { preDeployCheckOK } = require("deploytools");
 
-const deployableBranches = process.argv[2] === 'dev' ? ['main', 'prod'] : ['prod'];
+const deployableBranches = process.argv[2] === 'dev' ? ['main', 'dev'] : ['main'];
 
 const settingsFiles = {
     'dev': path.join(__dirname, '../../common/aws-settings.dev.json'),
