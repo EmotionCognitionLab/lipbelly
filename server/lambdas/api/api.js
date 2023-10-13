@@ -18,7 +18,7 @@ const validSexDesc = ['Male', 'Female', 'Other'];
 
 // The possible conditions a user can be assigned to
 // exported for testing
-export const validConditions = ['A', 'B'];
+export const validConditions = ['A', 'B', 'C'];
 
 exports.handler = async (event) => {
     const path = event.requestContext.http.path;
@@ -160,34 +160,43 @@ const assignToCondition = async(userId, data) => {
         };
 
         const result = await docClient.send(new ScanCommand(params));
-        let condition;
-        if (result.Count % 2 === 0) {
-            // randomly assign to condition
-            if (Math.random() <= 0.5) {
-                condition = validConditions[0];
-            } else {
-                condition = validConditions[1];
-            }
+        const countByCondition = result.Items.reduce((accum, cur) => {
+            const condCount = accum[cur.condition.assigned] || 0
+            accum[cur.condition.assigned] = condCount + 1
+            return accum
+        }, {});
 
-        } else {
-            // sort results by assignedDate and assign to the opposite of
-            // the most recently assigned person
-            result.Items.sort((a, b) => {
-                if (a.condition.assignedDate > b.condition.assignedDate) return -1;
-                if (a.condition.assignedDate < b.condition.assignedDate) return 1;
-                return 0;
-            });
-            const lastAssigned = result.Items[0];
-            if (lastAssigned.condition.assigned === validConditions[0]) {
-                condition = validConditions[1];
-            } else if (lastAssigned.condition.assigned === validConditions[1]) {
-                condition = validConditions[0]
-            } else {
-                return errorResponse({
-                    message: `Unexpected condition '${lastAssigned.condition.assigned}' found; unable to assign ${userId} to condition`,
-                    statusCode: 500
-                });
+        // make sure we handle the case where there's nobody 
+        // assigned to a given condition yet
+        const existingConds = Object.keys(countByCondition);
+        validConditions.forEach(c => {
+            if (!existingConds.includes(c)) {
+                countByCondition[c] = 0;
             }
+        });
+
+        const minCount = Math.min(...Object.values(countByCondition));
+        const minConds = Object.entries(countByCondition).filter(([k, v]) => v == minCount).map(([k, v]) => k);
+        let condition;
+        if (minConds.length == 1) {
+            condition = minConds[0]
+        } else if (minConds.length == 2) {
+            if (Math.random() <= 0.5) {
+                condition = minConds[0]
+            } else {
+                condition = minConds[1]
+            }
+        } else if (minConds.length == 3) {
+            const rand = Math.random()
+            if (rand < 0.333333333333333333) {
+                condition = minConds[0]
+            } else if (rand < 0.66666666666666667) {
+                condition = minConds[1]
+            } else {
+                condition = minConds[2]
+            }
+        } else {
+            throw new Error(`Expected one, two or three conditions, but found ${minConds.length}: ${minConds}.`);
         }
 
         // save the data

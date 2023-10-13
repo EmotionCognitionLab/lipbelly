@@ -140,35 +140,6 @@ describe("Assign to condition", () => {
         expect(userRec.condition.assignedSex).toBe('Male');
     });
 
-    test("should assign the participant to the opposite condition of the participant of the same assigned sex most recently assigned to condition if there are an odd number of participants with the same assigned sex", async () => { 
-        const targetSex = 'Male';
-        const maleUser = 
-        {
-            userId: 'def456',
-            email: 'noone@example.com',
-            name: 'Pat',
-            phone_number: '987-654-3210',
-            sub: 'def456',
-            condition: {
-                bornSex: targetSex,
-                sexDesc: '',
-                assignedSex: targetSex,
-                assignedDate: '2022-04-01T11:00:01.123Z',
-                assigned: 'A'
-            }
-        };
-        await loadAndConfirmUsers([maleUser], 'Male', 1);
-
-        const uid = 'afjkf393';
-        const result = await runLambda('/condition', 'POST', buildConditionAssignmentEvent(targetSex, '', uid));
-        expect(result.statusCode).toBe(200);
-        const body = JSON.parse(result.body);
-        expect(body.condition).toBe('B');
-        const userRec = await fetchUser(uid);
-        expect(userRec.condition).not.toBe(null);
-        expect(userRec.condition.assigned).toBe('B');
-    });
-
     test("should ignore participants of other sexes when doing assignment for a given sex", async () => {
         const users = [
             {
@@ -198,10 +169,24 @@ describe("Assign to condition", () => {
                     assignedDate: '2022-04-02T10:09:37.431Z',
                     assigned: 'B'
                 }
+            },
+            {
+                userId: 'ghi789',
+                email: 'fem2@example.com',
+                name: 'Alex',
+                phone_number: '111-222-3456',
+                sub: 'ghi789',
+                condition: {
+                    bornSex: 'Female',
+                    sexDesc: '',
+                    assignedSex: 'Female',
+                    assignedDate: '2022-04-03T09:18:22.732Z',
+                    assigned: 'C'
+                }
             }
         ];
 
-        await loadAndConfirmUsers(users, 'Female', 1);
+        await loadAndConfirmUsers(users, 'Female', 2);
 
         const uid = 'afjkf393';
         const result = await runLambda('/condition', 'POST', buildConditionAssignmentEvent('Female', '', uid));
@@ -213,62 +198,40 @@ describe("Assign to condition", () => {
         expect(userRec.condition.assigned).toBe('A');
     });
 
-    test("should use the condition of the most recently assigned user of the same sex when doing assignment", async () => {
+    test("should assign a new user to the condition with the fewest participants", async () => {
         const users = [
-            {
-                userId: 'def456',
-                email: 'noone@example.com',
-                name: 'Pat',
-                phone_number: '987-654-3210',
-                sub: 'def456',
-                condition: {
-                    bornSex: 'Female',
-                    sexDesc: '',
-                    assignedSex: 'Female',
-                    assignedDate: '2022-04-01T11:00:01.123Z',
-                    assigned: 'A'
-                }
-            },
-            {
-                userId: 'abc123',
-                email: 'someone@example.com',
-                name: 'Kim',
-                phone_number: '012-345-6789',
-                sub: 'abc123',
-                condition: {
-                    bornSex: 'Female',
-                    sexDesc: '',
-                    assignedSex: 'Female',
-                    assignedDate: '2022-04-02T10:09:37.431Z',
-                    assigned: 'B'
-                }
-            },
-            {
-                userId: 'ghi789',
-                email: 'g@example.com',
-                name: 'Alex',
-                phone_number: '190-287-3456',
-                sub: 'ghi789',
-                condition: {
-                    bornSex: 'Female',
-                    sexDesc: '',
-                    assignedSex: 'Female',
-                    assignedDate: '2022-04-03T11:00:01.123Z',
-                    assigned: 'B'
-                }
-            }
-        ];
+            {userId: 'a', sub: 'a', condition: { assignedSex: 'Male', assigned: 'A'}},
+            {userId: 'b', sub: 'b', condition: { assignedSex: 'Male', assigned: 'B'}},
+        ]
 
-        await loadAndConfirmUsers(users, 'Female', 3);
+        await loadAndConfirmUsers(users, 'Male', 2);
+        const uid = 'test';
+        const result = await runLambda('/condition', 'POST', buildConditionAssignmentEvent('Male', '', uid));
+        expect(result.statusCode).toBe(200);
+        const body = JSON.parse(result.body);
+        expect(body.condition).toBe('C');
+        const userRec = await fetchUser(uid);
+        expect(userRec.condition).not.toBe(null);
+        expect(userRec.condition.assigned).toBe('C');
+    });
 
-        const uid = 'aeui320';
+    test("should pick randomly between the two conditions with the fewest participants when two conditions have the same number of participants and the third has more", async () => {
+        const users = [
+            {userId: 'a', sub: 'a', condition: { assignedSex: 'Female', assigned: 'A'}},
+            {userId: 'b', sub: 'b', condition: { assignedSex: 'Female', assigned: 'B'}},
+            {userId: 'c1', sub: 'c1', condition: { assignedSex: 'Female', assigned: 'C'}},
+            {userId: 'c2', sub: 'c2', condition: { assignedSex: 'Female', assigned: 'C'}},
+        ]
+
+        await loadAndConfirmUsers(users, 'Female', 4);
+        const uid = 'test';
         const result = await runLambda('/condition', 'POST', buildConditionAssignmentEvent('Female', '', uid));
         expect(result.statusCode).toBe(200);
         const body = JSON.parse(result.body);
-        expect(body.condition).toBe('A');
+        expect(body.condition == 'A' || body.condition == 'B').toBe(true);
         const userRec = await fetchUser(uid);
         expect(userRec.condition).not.toBe(null);
-        expect(userRec.condition.assigned).toBe('A');
+        expect(userRec.condition.assigned == 'A' || userRec.condition.assigned == 'B').toBe(true);
     });
 
     afterEach(async () => {
@@ -325,18 +288,23 @@ describe("assignment to condition tested with many users", () => {
             // they should never have a run of 'AAA...' or 'BBB...'.
             expect(conditionStr).toEqual(expect.not.stringContaining('AAA'));
             expect(conditionStr).toEqual(expect.not.stringContaining('BBB'));
+            expect(conditionStr).toEqual(expect.not.stringContaining('CCC'));
         });
     });
 
-    test("should have an even number of users assigned to each condition if an even number of users have been created, or a difference of 1 between the numbers for each condition if an odd number of users have been created", async () => {
+    test("should have an even number of users assigned to each condition if the number of users created is evenly divisible by three, or a difference of 1 between the max and min group size otherwise", async () => {
         [males, females].forEach(sex => {
             const condA = sex.filter(u => u.condition.assigned === 'A');
             const condB = sex.filter(u => u.condition.assigned === 'B');
-            expect(condA.length + condB.length).toEqual(sex.length);
-            if (sex.length % 2 == 0) {
+            const condC = sex.filter(u => u.condition.assigned === 'C');
+            expect(condA.length + condB.length + condC.length).toEqual(sex.length);
+            if (sex.length % 3 == 0) {
                 expect(condA.length).toEqual(condB.length);
+                expect(condA.length).toEqual(condC.length);
             } else {
-                expect(Math.abs(condA.length - condB.length)).toEqual(1);
+                const maxLen = Math.max(condA.length, condB.length, condC.length);
+                const smallerConds = [condA, condB, condC].filter(cond => cond.length != maxLen)
+                smallerConds.forEach(cond => expect(cond.length).toEqual(maxLen - 1));
             }
         });
     });
