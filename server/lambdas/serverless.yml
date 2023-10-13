@@ -50,8 +50,6 @@ functions:
         - 'process-sqlite-dbs/node_modules/**'
         - 'process-sqlite-dbs/*.js'
 
-  # do not change the name or path of this function
-  # without also changing it in plugins/wordnet-plugin.js
   write-user-on-verify:
     handler: on-user-verify/verified.handler
     environment:
