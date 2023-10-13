@@ -15,7 +15,14 @@
                 <button @click="instructionsRead=true">Continue</button>
             </div>
             <div id="breathing" v-if="instructionsRead && !breathingDone && !noTime">
-                <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()" />
+                <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()">
+                    <template #preText v-if="condition == 'A' || condition == 'B'">
+                        When you are ready to begin, please press the start button. Please close your eyes and direct your thoughts to your body sensations.
+                    </template>
+                    <template #preText v-else>
+                        When you are ready to begin, please press the start button. Please sit quietly since we are recording your pulse. Please feel free to do whatever you like that does not involve head motion.
+                    </template>
+                </RestComponent>
             </div>
             <div id="notime" v-if="noTime">
                 You don't have enough time to complete another session today. Please come back tomorrow.
@@ -55,6 +62,7 @@
     const stage = 2
     const segsPerDay = ref(4)
     const sessionDuration = ref(1200)
+    const condition = ref('')
 
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
@@ -75,21 +83,28 @@
         noTime.value = minutesRemainingToday < sessionMinutes
         if (noTime.value) return // audio won't matter; they aren't doing any more today
 
-        audioSrc.value = await selectAudio(sessionMinutes)
+        condition.value = await getCondition()
+        audioSrc.value = selectAudio(sessionMinutes, condition.value)
     })
 
-    async function selectAudio(sessionMinutes) {
+    async function getCondition() {
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
         const data = await apiClient.getSelf()
+        return data.condition.assigned;
+    }
+
+    function selectAudio(sessionMinutes, condition) {
         let file
-        if (data.condition.assigned === 'A') {
+        if (condition === 'A') {
             file = 'l.m4a'
-        } else if (data.condition.assigned === 'B') {
+        } else if (condition === 'B') {
             file = 'b.m4a'
+        } else if (condition === 'C') {
+            return null
         } else {
-            console.error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
-            throw new Error(`Expected condition of A or B but got '${data.condition.assigned}'.`)
+            console.error(`Expected condition of A or B or C but got '${condition}'.`)
+            throw new Error(`Expected condition of A or B or Cbut got '${condition}'.`)
         }
         if (sessionMinutes == 10) {
             return `${awsSettings.ImagesUrl}/assets/10_${file}`
