@@ -1,6 +1,6 @@
 {
   "name": "client",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Biofeedback application to direct participants in the lipbelly study in breathing and meditative focus.",
   "author": "Noah Mercer <noahmerc@usc.edu>",
   "scripts": {
