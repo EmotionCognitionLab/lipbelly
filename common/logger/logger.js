@@ -144,6 +144,15 @@ export class Logger {
             await this.setStream();
             const unsent = this.logEntries.splice(0);
             const streamName = this.localStorage.getItem(streamKey);
+            // for some reason the stream name is occasionally
+            // undefined. Maybe issue with localStorage?
+            for (let i=0; i<3; i++) {
+                if (streamName !== undefined) break;
+
+                await this.setStream();
+                await new Promise(res => setTimeout(res, 1000));
+            }
+            
             if (unsent.length) {
                 const cmd = new DescribeLogStreamsCommand({
                     logGroupName: this.logGroupName,
