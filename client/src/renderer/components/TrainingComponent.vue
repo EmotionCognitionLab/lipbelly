@@ -4,7 +4,7 @@
             <EmoMemComponent @finished="hasDoneEmoMem=true"/>
         </div>
         <div v-else>
-            <div id="instructions" v-if="!instructionsRead && !breathingDone && !noTime">
+            <div id="instructions1" v-if="instructionsStep == 1 && !breathingDone && !noTime">
                 Please make sure to:<br/>
                 <ul>
                     <li>plug the USB ear sensor into the laptop</li>
@@ -12,9 +12,28 @@
                     <li>sit in a comfortable position in a chair and be ready to start a session</li>
                 </ul>
                 <br/>
-                <button @click="instructionsRead=true">Continue</button>
+                <button @click="instructionsStep=2">Continue</button>
             </div>
-            <div id="breathing" v-if="instructionsRead && !breathingDone && !noTime">
+            <div id="instructions2" v-if="instructionsStep == 2 && !breathingDone && !noTime" class="instruction">
+                <div v-if="condition == 'A'">
+                    You will be asked to sit quietly to meditate for 20 minutes while your heart rate is recorded. 
+                    During this time, you will listen to a guided meditation (pre-recorded by a meditation expert) to help you focus on the sensations around the nostrils and upper lip. 
+                    Please remember that it is normal for the mind to wander. 
+                    When this happens, gently bring your attention back to the upper lip area.
+                </div>
+                <div v-else-if="condition == 'B'">
+                    You will be asked to sit quietly to meditate for 20 minutes while your heart rate is recorded. 
+                    During this time, you will listen to a guided meditation (pre-recorded by a meditation expert) to help you focus on the sensations around the belly. 
+                    Please remember that it is normal for the mind to wander. 
+                    When this happens, gently bring your attention back to your belly.
+                </div>
+                <div v-else>
+                    You will be asked to sit quietly for 20 minutes while your heart rate is recorded. 
+                    Please feel free to do whatever you would like to do (e.g., use your phone or computer, read a book, watch TV, listen to music) as long as your activity does not involve head motion.
+                </div>
+                <button @click="instructionsStep=3">Continue</button>
+            </div>
+            <div id="breathing" v-if="instructionsStep == 3 && !breathingDone && !noTime">
                 <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()">
                     <template #preText v-if="condition == 'A' || condition == 'B'">
                         When you are ready to begin, please press the start button. Please close your eyes and direct your thoughts to your body sensations.
@@ -54,7 +73,7 @@
     import awsSettings from '../../../../common/aws-settings.json'
 
     const hasDoneEmoMem = ref(false)
-    const instructionsRead = ref(false)
+    const instructionsStep = ref(1)
     const breathingDone = ref(false)
     const noTime = ref(false)
     const todaySegCount = ref(0)
