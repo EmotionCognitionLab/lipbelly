@@ -31,9 +31,12 @@ function uploadFile(fpath, key) {
         Bucket: awsSettings.DeploymentBucket,
         Key: key,
         Body: contents,
-        ACL: "public-read",
         ContentType: contentType
     };
+    // prod bucket uses object ACL's, dev doesn't
+    if (!awsSettings.DeploymentBucket.startsWith('dev')) {
+        params['ACL'] = 'public-read'
+    }
     const upload = new S3.ManagedUpload({params: params});
     upload.send(function(err, data) {
         if (err) {
