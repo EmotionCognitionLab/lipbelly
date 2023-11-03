@@ -3,6 +3,7 @@ import userDetailsTmpl from "./templates/userDetails.handlebars";
 import statusTmpl from "./templates/status.handlebars";
 import { DatedCheckbox } from "./DatedCheckbox";
 import { Payboard } from "../../../common/pay-info/pay-info";
+import { FutureDateField } from "./FutureDateField";
 
 export class Dashboard {
     constructor(tbody, userDetailsDiv, apiClient) {
@@ -24,6 +25,7 @@ export class Dashboard {
                     email: u.email,
                     phone: u.phone,
                     visit1: new DatedCheckbox('visit1', u.progress ? u.progress.visit1 : null),
+                    visit2Scheduled: new FutureDateField('visit2Scheduled', u.progress ? u.progress.visit2Scheduled : null ),
                     visit2: new DatedCheckbox('visit2', u.progress ? u.progress.visit2 : null),
                     dropped: new DatedCheckbox('dropped', u.progress ? u.progress.dropped : null),
                 }
@@ -42,6 +44,13 @@ export class Dashboard {
             return;
         });
 
+        this.tbody.addEventListener("change", async event => {
+            const target = event.target;
+            if (target.type == "datetime-local") {
+                await this.handleDateFieldEvent(event);
+            }
+        });
+
         this.userDetailsDiv.addEventListener("click", async event => {
             await this.handleDetailsClickEvent(event)
         });
@@ -55,15 +64,7 @@ export class Dashboard {
         checkbox.disabled = true;
         const userId = checkbox.closest("tr")?.dataset.userId;
         try {
-            await this.refreshUser(userId);
-            const user = this.users[userId];
-            const progress = user.progress ?? {};
-            if (date) {
-                progress[key] = date.format('YYYY-MM-DDTHH:mm:ssZ');
-            } else {
-                progress[key] = null;
-            }
-            await this.apiClient.updateUser(userId, {progress});
+            await this.updateUserProgress(userId, key, date.format("YYYY-MM-DDTHH:mm:ssZ"));
         } catch (err) {
             DatedCheckbox.undoClick(event, origDateStr);
             console.error(`Error setting date for ${key} for ${userId}`, err);
@@ -72,6 +73,42 @@ export class Dashboard {
         } finally {
             checkbox.disabled = false;
         }
+    }
+
+    async handleDateFieldEvent(event) {
+        const dateField = event.target;
+
+        const {key, datetime} = FutureDateField.handleChange(event);
+        const userId = dateField.closest("tr")?.dataset.userId;
+        dateField.disabled = true;
+        try {
+            await this.updateUserProgress(userId, key, datetime.format("YYYY-MM-DDTHH:mm:ssZ"));
+        } catch (err) {
+            event.preventDefault();
+            console.error(`Error setting visit 2 scheduled date for ${userId}`, err);
+            window.alert("A problem ocurred. Please try again later.");
+            const user = this.users[userId];
+            const origDateStr = user.progress ? user.progress.visit2Scheduled : null;
+
+            // this is stupid, but for some reason (webpack bug?)
+            // setting dateField.value directly here will trigger
+            // a new change event
+            setTimeout(() => dateField.value = origDateStr, 100)
+        } finally {
+            dateField.disabled = false;
+        }
+    }
+
+    async updateUserProgress(userId, key, value) {
+        await this.refreshUser(userId);
+        const user = this.users[userId];
+        const progress = user.progress ?? {};
+        if (value) {
+            progress[key] = value;
+        } else {
+            progress[key] = null;
+        }
+        await this.apiClient.updateUser(userId, {progress});
     }
 
     async handleUserEvent(event) {

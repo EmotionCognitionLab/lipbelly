@@ -5,11 +5,18 @@
     </label>
 {{/inline}}
 
+{{#*inline "future-date-field"}}
+    <label class="wide-label">
+        <input type="datetime-local" data-key="{{this.key}}" min="{{this.minDate}}" max="{{this.maxDate}}" {{#if this.datetime}}value="{{this.datetime}}"{{/if}}>
+    </label>
+{{/inline}}
+
 {{#each users}}
 <tr data-user-id="{{this.userId}}">
     <td><div class="username">{{this.name}}</div></td>
     <td>{{> dated-checkbox this.visit1}}</td>
     <td class="status">Loading...</td>
+    <td>{{> future-date-field this.visit2Scheduled}}</td>
     <td>{{> dated-checkbox this.visit2}}</td>
     <td>{{> dated-checkbox this.dropped}}</td>
 </tr>

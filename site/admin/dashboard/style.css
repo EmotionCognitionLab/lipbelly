@@ -66,6 +66,10 @@ label {
     cursor: pointer;
 }
 
+.wide-label {
+    width: 230px;
+}
+
 #error {
     color: red;
     font-size: 125%;
