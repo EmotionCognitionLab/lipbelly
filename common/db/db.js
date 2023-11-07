@@ -86,6 +86,26 @@ export default class Db {
         }
     }
 
+    /**
+     * 
+     * @param {string} visit2ScheduleDate A YYYY-MM-DD string indicating the visit 2 scheduled date
+     * @returns 
+     */
+    async getUsersWithVisit2ScheduledOn(visit2ScheduledDate) {
+        try {
+            const params = {
+                TableName: this.usersTable,
+                FilterExpression: `attribute_exists(progress.visit2Scheduled) and
+                begins_with(progress.visit2Scheduled, ${visit2ScheduledDate})`
+            };
+            const dynResults = await this.scan(params);
+            return dynResults.Items;
+        } catch (err) {
+            this.logger.error(err);
+            throw err;
+        }
+    }
+
     async segmentsForUser(userId, stage, startDate = new Date(0), endDate = new Date(1000 * 60 * 60 * 24 * 365 * 1000)) {
         const startDateEpoch = Math.floor(startDate.getTime() / 1000);
         const endDateEpoch = Math.floor(endDate.getTime() / 1000);

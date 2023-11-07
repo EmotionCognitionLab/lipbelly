@@ -17,6 +17,7 @@ import { handler } from '../reminders';
 const defaultUser =  { userId: '123abc', humanId: 'BigIdea', email: 'nobody@example.com' };
 const mockGetAllUsers = jest.fn(() => [ defaultUser ]);
 const mockSegmentsForUser = jest.fn(() => []);
+const mockGetVisit2Users = jest.fn(() => []);
 
 const mockSESClient = mockClient(SESClient);
 const mockSNSClient = mockClient(SNSClient);
@@ -27,6 +28,7 @@ jest.mock('db/db', () => {
         return {
             getAllUsers: () => mockGetAllUsers(),
             segmentsForUser: (userId, startDate, endDate) => mockSegmentsForUser(userId, startDate, endDate),
+            getUsersWithVisit2ScheduledOn: (visit2ScheduledDate) => mockGetVisit2Users(visit2ScheduledDate)
         };
     });
 });
@@ -48,11 +50,11 @@ describe("reminders", () => {
     });
 
     it("should throw an error if no reminderType is provided", async () => {
-        await expect(() => handler({commType: 'email'})).rejects.toEqual(Error("A reminderType of 'homeTraining' was expected, but 'undefined' was received."));
+        await expect(() => handler({commType: 'email'})).rejects.toEqual(Error("A reminderType of 'homeTraining' or 'visit2' was expected, but 'undefined' was received."));
     });
 
     it("should throw an error if an unexpected reminderType is provided", async () => {
-        await expect(() => handler({commType: 'email', reminderType: 'make your bed'})).rejects.toEqual(Error("A reminderType of 'homeTraining' was expected, but 'make your bed' was received."));
+        await expect(() => handler({commType: 'email', reminderType: 'make your bed'})).rejects.toEqual(Error("A reminderType of 'homeTraining' or 'visit2' was expected, but 'make your bed' was received."));
     });
 
     it("should send an email when the commType is email", async () => {
@@ -133,3 +135,52 @@ describe("home training reminders", () => {
         expect(mockSNSClient.commandCalls(PublishCommand).length).toBe(0);
     });
 });
+
+describe("visit 2 reminders", () => {
+
+    const users = [
+        {
+            name: 'Pat Doe',
+            progress: {'visit2Scheduled': '2023-11-06T15:00:00-08:00'},
+            email: 'pat@example.com'
+        }
+    ];
+
+    beforeAll(() => {
+        mockGetVisit2Users.mockImplementation(() => users);
+    })
+
+    afterEach(() => {
+        mockSESClient.resetHistory();
+        mockSNSClient.resetHistory();
+    });
+
+    it("should include the user's first name in the message", async () => {
+        await confirmVisit2ReminderContains(users[0].name.split(' ')[0]);
+    });
+
+    it("should include the MM/DD/YY date of the visit in the message", async () => {
+        const date = dayjs(users[0]['progress']['visit2Scheduled']).tz('America/Los_Angeles');
+        await confirmVisit2ReminderContains(date.format('MM/DD/YY'));
+    });
+
+    it("should include the weekday of the visit in the message", async () => {
+        const date = dayjs(users[0]['progress']['visit2Scheduled']).tz('America/Los_Angeles');
+        await confirmVisit2ReminderContains(date.format('dddd'));
+    });
+
+    it("should include the time of the visit in the message", async () => {
+        const date = dayjs(users[0]['progress']['visit2Scheduled']).tz('America/Los_Angeles');
+        await confirmVisit2ReminderContains(date.format('h:mm A'));
+    });
+
+});
+
+async function confirmVisit2ReminderContains(testStr) {
+    await handler({commType: 'email', reminderType: 'visit2'});
+    expect(mockSESClient.commandCalls(SendEmailCommand).length).toBe(1);
+    const htmlMsg = mockSESClient.commandCalls(SendEmailCommand)[0].args[0].input.Message.Body.Html.Data;
+    expect(htmlMsg).toContain(testStr);
+    const txtMsg = mockSESClient.commandCalls(SendEmailCommand)[0].args[0].input.Message.Body.Text.Data;
+    expect(txtMsg).toContain(testStr);
+}
