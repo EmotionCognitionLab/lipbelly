@@ -88,7 +88,7 @@ export default class Db {
 
     /**
      * 
-     * @param {string} visit2ScheduleDate A YYYY-MM-DD string indicating the visit 2 scheduled date
+     * @param {string} visit2ScheduledDate A YYYY-MM-DD string indicating the visit 2 scheduled date
      * @returns 
      */
     async getUsersWithVisit2ScheduledOn(visit2ScheduledDate) {
