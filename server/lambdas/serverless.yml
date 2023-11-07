@@ -154,6 +154,12 @@ functions:
           input:
             commType: sms
             reminderType: homeTraining
+      - schedule:
+          name: "${self:service}-${self:provider.stage}-visit2-11am-email-reminder"
+          rate: cron(0 19 * * ? *)
+          input:
+            commType: email
+            reminderType: visit2
     environment:
       REGION: ${self:provider.region}
       EMAIL_SENDER: "uscemotioncognitionlab@gmail.com"
