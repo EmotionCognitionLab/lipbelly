@@ -30,14 +30,14 @@ const visit2Msg = (details) => ({
     scheduled for tomorrow, ${details['weekday']}, ${details['mmddyyDate']} at ${details['time']}. 
     <strong>Please remember to bring all your devices tomorrow (i.e. laptop bag, laptop, charger, ear sensor, earphones).</strong>
     <p>
-    Please ensure you drink plenty of water today and tomorrow for your blood draw. If you are unable to attend Lab Visit #2, please notify us as soon as possible.
+    Please ensure you drink plenty of water today and tomorrow for your blood draw. If you are unable to attend lab visit #2, please notify us as soon as possible.
     </p>
     Best regards,<br/>
     The Meditation Study Team`,
     text: `Dear ${details['firstName']},
     This is a friendly reminder for your upcoming lab visit #2, scheduled for tomorrow, ${details['weekday']}, ${details['mmddyyDate']} at ${details['time']}. Please remember to bring all your devices tomorrow (i.e. laptop bag, laptop, charger, ear sensor, earphones).
     
-    Please ensure you drink plenty of water today and tomorrow for your blood draw. If you are unable to attend Lab Visit #2, please notify us as soon as possible.
+    Please ensure you drink plenty of water today and tomorrow for your blood draw. If you are unable to attend lab visit #2, please notify us as soon as possible.
     
     Best regards,
     The Meditation Study Team`,
