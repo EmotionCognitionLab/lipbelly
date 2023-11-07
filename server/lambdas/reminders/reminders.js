@@ -31,7 +31,7 @@ const visit2Msg = (details) => ({
     <strong>Please remember to bring all your devices tomorrow (i.e. laptop bag, laptop, charger, ear sensor, earphones).</strong>
     <p>
     Please ensure you drink plenty of water today and tomorrow for your blood draw. If you are unable to attend Lab Visit #2, please notify us as soon as possible.
-    <p>
+    </p>
     Best regards,<br/>
     The Meditation Study Team`,
     text: `Dear ${details['firstName']},
