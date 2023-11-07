@@ -96,7 +96,7 @@ export default class Db {
             const params = {
                 TableName: this.usersTable,
                 FilterExpression: `attribute_exists(progress.visit2Scheduled) and
-                begins_with(progress.visit2Scheduled, ${visit2ScheduledDate})`
+                begins_with(progress.visit2Scheduled, "${visit2ScheduledDate}")`
             };
             const dynResults = await this.scan(params);
             return dynResults.Items;
