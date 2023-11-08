@@ -99,7 +99,7 @@
         const midnight = new Date()
         midnight.setHours(23); midnight.setMinutes(59); midnight.setSeconds(59);
         const minutesRemainingToday = (midnight - now) / (1000 * 60)
-        noTime.value = minutesRemainingToday < sessionMinutes
+        noTime.value = minutesRemainingToday < sessionMinutes + 1 // +1 to allow a little time for sensor delays
         if (noTime.value) return // audio won't matter; they aren't doing any more today
 
         condition.value = await getCondition()
