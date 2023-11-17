@@ -22,7 +22,7 @@
     import { epToCoherence } from '../../coherence.js'
 
     const props = defineProps(['showIbi', 'showScore', 'condition'])
-    const emit = defineEmits(['pulse-sensor-calibrated', 'pulse-sensor-signal-lost', 'pulse-sensor-signal-restored', 'pulse-sensor-stopped', 'pulse-sensor-session-ended'])
+    const emit = defineEmits(['session-started', 'pulse-sensor-calibrated', 'pulse-sensor-signal-lost', 'pulse-sensor-signal-restored', 'pulse-sensor-stopped', 'pulse-sensor-session-ended'])
     let ibi = ref(0)
     const ep = ref(-1)
     let calibrated = ref(false)
@@ -98,6 +98,7 @@
     // eslint-disable-next-line no-unused-vars
     function startPulseSensor() {
         window.mainAPI.startPulseSensor()
+        emit('session-started')
         running.value = true
         stopSensor.value = false
         sessionEnded.value = false

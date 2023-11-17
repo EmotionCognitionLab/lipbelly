@@ -1,7 +1,7 @@
 <template>
     <div>
         <div id="emopics" v-if="!hasDoneEmoMem && !noTime">
-            <EmoMemComponent @finished="hasDoneEmoMem=true"/>
+            <EmoMemComponent @finished="emoMemDone()"/>
         </div>
         <div v-else>
             <div id="instructions1" v-if="instructionsStep == 1 && !breathingDone && !noTime">
@@ -34,7 +34,7 @@
                 <button @click="instructionsStep=3">Continue</button>
             </div>
             <div id="breathing" v-if="instructionsStep == 3 && !breathingDone && !noTime">
-                <RestComponent :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()">
+                <RestComponent :finishBy="midnightDate()" :totalDurationSeconds=sessionDuration :segmentDurationSeconds=600 :audioSrc=audioSrc @timerFinished="sessionDone()">
                     <template #preText v-if="condition == 'A' || condition == 'B'">
                         When you are ready to begin, please press the start button. Please close your eyes and direct your thoughts to your body sensations.
                     </template>
@@ -93,16 +93,12 @@
         if (segsRemaining == 1) {
             sessionDuration.value = 600
         }
-        const sessionMinutes = sessionDuration.value / 60
-
-        const now = new Date()
-        const midnight = new Date()
-        midnight.setHours(23); midnight.setMinutes(59); midnight.setSeconds(59);
-        const minutesRemainingToday = (midnight - now) / (1000 * 60)
-        noTime.value = minutesRemainingToday < sessionMinutes + 1 // +1 to allow a little time for sensor delays
+        
+        noTime.value = noTimeForSessionToday()
         if (noTime.value) return // audio won't matter; they aren't doing any more today
 
         condition.value = await getCondition()
+        const sessionMinutes = sessionDuration.value / 60
         audioSrc.value = selectAudio(sessionMinutes, condition.value)
     })
 
@@ -133,6 +129,25 @@
             console.error(`Expected session to be 10 or 20 minutes long, but got ${sessionMinutes} minutes.`)
             throw new Error(`Expected session to be 10 or 20 minutes long, but got ${sessionMinutes} minutes.`)
         }
+    }
+
+    function noTimeForSessionToday() {
+        const sessionMinutes = sessionDuration.value / 60
+        const now = new Date()
+        const midnight = midnightDate()
+        const minutesRemainingToday = (midnight - now) / (1000 * 60)
+        return minutesRemainingToday < sessionMinutes + 2 // +2 to allow a little time for emomem and sensor delays
+    }
+
+    function emoMemDone() {
+        hasDoneEmoMem.value = true
+        noTime.value = noTimeForSessionToday() // update in case they spent a lot of time doing emomem
+    }
+
+    function midnightDate() {
+        const midnight = new Date()
+        midnight.setHours(23); midnight.setMinutes(59); midnight.setSeconds(59);
+        return midnight;
     }
 
     async function updateTodaySegCount() {
