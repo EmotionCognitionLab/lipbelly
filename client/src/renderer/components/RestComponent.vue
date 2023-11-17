@@ -1,19 +1,24 @@
 <template>
-    <div class="instruction" v-if="!done">
-        <slot name="preText">
-            When you are ready to begin please press the start button.
-            Please get into a comfortable position on a chair or on a pillow, finding a position with your back and neck upright. Please rest and do not do anything during this portion.
-        </slot>
-        <EmWaveListener :showIbi=false @pulseSensorCalibrated="startTimer" @pulseSensorStopped="sensorStopped" @pulseSensorSignalLost="sensorStopped" @pulseSensorSignalRestored="startTimer" @pulseSensorSessionEnded="resetTimer" ref="emwaveListener"/> 
-        <br/>
-        <TimerComponent :secondsDuration=totalDurationSeconds :showButtons=false @timerFinished="stopSession" ref="timer" />
+    <div class="instruction" v-if="noTime">
+        There is not enough time left today for you to finish this breathing session. Please come back tomorrow.
     </div>
-    <div class="instruction" v-else>
-        <slot name="postText">
-            All done for today! Please come back tomorrow for more training.
+    <div v-else>
+        <div class="instruction" v-if="!done">
+            <slot name="preText">
+                When you are ready to begin please press the start button.
+                Please get into a comfortable position on a chair or on a pillow, finding a position with your back and neck upright. Please rest and do not do anything during this portion.
+            </slot>
+            <EmWaveListener :showIbi=false @sessionStarted="checkTime"  @pulseSensorCalibrated="startTimer" @pulseSensorStopped="sensorStopped" @pulseSensorSignalLost="sensorStopped" @pulseSensorSignalRestored="startTimer" @pulseSensorSessionEnded="resetTimer" ref="emwaveListener"/> 
             <br/>
-            <button class="button"  @click="quit">Quit</button>
-        </slot>
+            <TimerComponent :secondsDuration=totalDurationSeconds :showButtons=false @timerFinished="stopSession" ref="timer" />
+        </div>
+        <div class="instruction" v-else>
+            <slot name="postText">
+                All done for today! Please come back tomorrow for more training.
+                <br/>
+                <button class="button"  @click="quit">Quit</button>
+            </slot>
+        </div>
     </div>
 </template>
 <script setup>
@@ -22,10 +27,16 @@ import EmWaveListener from './EmWaveListener.vue'
 import TimerComponent from './TimerComponent.vue'
 import { CountdownTimer } from '../../countdown-timer'
 
-const props = defineProps({totalDurationSeconds: Number, segmentDurationSeconds: { type: Number, default: -1 }, audioSrc: String})
+const props = defineProps({
+    totalDurationSeconds: Number,
+    segmentDurationSeconds: { type: Number, default: -1 },
+    audioSrc: String,
+    finishBy: {type: Number, default: -1} // ms since the epoch; -1 means there is no time the session needs to be finished by
+})
 const emwaveListener = ref(null)
 const timer = ref(null)
 const done = ref(false)
+const noTime = ref(false)
 const emit = defineEmits(['timer-finished'])
 let timerDone = false
 let segmentTimer = null
@@ -49,7 +60,19 @@ onMounted(() => {
             console.log('audio err msg', audio.error.message)
         })
     }
+
+    noTime.value = props.finishBy > 0 && props.finishBy < Date.now() + (props.totalDurationSeconds * 1000)
 })
+
+function checkTime() {
+    if (props.finishBy <= 0) {
+        noTime.value = false
+        return
+    }
+
+    const neededTime = (remainingSegmentCount + 1) * props.segmentDurationSeconds
+    noTime.value = props.finishBy < (Date.now() + neededTime * 1000)
+}
 
 async function startTimer() {
     timer.value.running = true
