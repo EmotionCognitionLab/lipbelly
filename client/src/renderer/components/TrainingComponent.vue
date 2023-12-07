@@ -120,7 +120,7 @@
             return null
         } else {
             console.error(`Expected condition of A or B or C but got '${condition}'.`)
-            throw new Error(`Expected condition of A or B or Cbut got '${condition}'.`)
+            throw new Error(`Expected condition of A or B or C but got '${condition}'.`)
         }
         if (sessionMinutes == 10) {
             return `${awsSettings.ImagesUrl}/assets/10_${file}`
