@@ -113,7 +113,7 @@
     function selectAudio(sessionMinutes, condition) {
         let file
         if (condition === 'A') {
-            file = 'l.m4a'
+            file = 'bsb.m4a'
         } else if (condition === 'B') {
             file = 'b.m4a'
         } else if (condition === 'C') {
