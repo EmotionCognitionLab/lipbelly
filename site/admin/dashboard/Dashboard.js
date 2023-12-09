@@ -64,7 +64,8 @@ export class Dashboard {
         checkbox.disabled = true;
         const userId = checkbox.closest("tr")?.dataset.userId;
         try {
-            await this.updateUserProgress(userId, key, date.format("YYYY-MM-DDTHH:mm:ssZ"));
+            const dateStr = date ? date.format("YYYY-MM-DDTHH:mm:ssZ") : null;
+            await this.updateUserProgress(userId, key, dateStr);
         } catch (err) {
             DatedCheckbox.undoClick(event, origDateStr);
             console.error(`Error setting date for ${key} for ${userId}`, err);
