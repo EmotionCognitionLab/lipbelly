@@ -144,13 +144,13 @@ functions:
     events:
       - schedule:
           name: "${self:service}-${self:provider.stage}-home-training-11am-email-reminder"
-          rate: cron(0 18 * * ? *)
+          rate: cron(0 19 * * ? *)
           input:
             commType: email
             reminderType: homeTraining
       - schedule:
           name: "${self:service}-${self:provider.stage}-home-training-8pm-sms-reminder"
-          rate: cron(0 3 * * ? *)
+          rate: cron(0 4 * * ? *)
           input:
             commType: sms
             reminderType: homeTraining
