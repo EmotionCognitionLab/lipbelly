@@ -27,6 +27,7 @@ export class Dashboard {
                     visit1: new DatedCheckbox('visit1', u.progress ? u.progress.visit1 : null),
                     visit2Scheduled: new FutureDateField('visit2Scheduled', u.progress ? u.progress.visit2Scheduled : null ),
                     visit2: new DatedCheckbox('visit2', u.progress ? u.progress.visit2 : null),
+                    condition: u.condition ? this.translateCondition(u.condition.assigned) : 'NYA',
                     dropped: new DatedCheckbox('dropped', u.progress ? u.progress.dropped : null),
                 }
             );
@@ -56,6 +57,13 @@ export class Dashboard {
         });
 
         this.fetchStatusForUsers();
+    }
+
+    translateCondition(condition) {
+        if (condition == 'A') return 'Belly+Slow';
+        if (condition == 'B') return 'Belly';
+        if (condition == 'C') return 'No Intervention';
+        return 'Error'
     }
 
     async handleCheckboxEvent(event) {
