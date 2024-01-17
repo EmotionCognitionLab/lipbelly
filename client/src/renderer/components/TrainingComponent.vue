@@ -16,6 +16,7 @@
             </div>
             <div id="instructions2" v-if="instructionsStep == 2 && !breathingDone && !noTime" class="instruction">
                 <div v-if="condition == 'A'">
+                    <h2>Belly-focus concentration meditation with slow breathing</h2>
                     You will be asked to sit quietly to meditate for 20 minutes while your heart rate is recorded. 
                     During this time, you will listen to a guided meditation (pre-recorded by a meditation expert) to help you focus on the sensations around the belly. 
                     You will also be asked to breathe slowly during the entire meditation session. 
@@ -23,12 +24,14 @@
                     When this happens, gently bring your attention back to your belly.
                 </div>
                 <div v-else-if="condition == 'B'">
+                    <h2>Belly-focus concentration meditation</h2>
                     You will be asked to sit quietly to meditate for 20 minutes while your heart rate is recorded. 
                     During this time, you will listen to a guided meditation (pre-recorded by a meditation expert) to help you focus on the sensations around the belly. 
                     Please remember that it is normal for the mind to wander. 
                     When this happens, gently bring your attention back to your belly.
                 </div>
                 <div v-else>
+                    <h2>No intervention</h2>
                     You will be asked to sit quietly for 20 minutes while your heart rate is recorded. 
                     Please feel free to do whatever you would like to do (e.g., use your phone or computer, read a book, watch TV, listen to music) as long as your activity does not involve head motion.
                 </div>
