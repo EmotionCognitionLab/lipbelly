@@ -33,10 +33,14 @@
                     Please remember that it is normal for the mind to wander. 
                     When this happens, gently bring your attention back to your belly.
                 </div>
-                <div v-else>
+                <div v-else-if="condition == 'C'">
                     <h2>No intervention</h2>
                     You will be asked to sit quietly for 20 minutes while your heart rate is recorded. 
                     Please feel free to do whatever you would like to do (e.g., use your phone or computer, read a book, watch TV, listen to music) as long as your activity does not involve head motion.
+                </div>
+                <div v-else>
+                    <h2>An error has happened</h2>
+                    There is an error with your assignment to condition. Please ask the experimenter for assistance.
                 </div>
                 <button @click="instructionsStep=3">Continue</button>
             </div>
@@ -135,7 +139,7 @@
         const session = await SessionStore.getRendererSession()
         const apiClient = new ApiClient(session)
         const data = await apiClient.getSelf()
-        return data.condition.assigned;
+        return data.condition ? data.condition.assigned : ''
     }
 
     function selectAudio(sessionMinutes, condition) {
