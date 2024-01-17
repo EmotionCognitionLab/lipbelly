@@ -14,7 +14,10 @@
                 <br/>
                 <button @click="instructionsStep=2">Continue</button>
             </div>
-            <div id="instructions2" v-if="instructionsStep == 2 && !breathingDone && !noTime" class="instruction">
+            <div id="in-lab-instructions" v-if="instructionsStep == 2 && isInLabSetup && !breathingDone && !noTime" class="instruction">
+                You have been randomly assigned to one of three conditions. Please wait for the experimenter to come and give you further instructions. Please DO NOT press any keys.
+            </div>
+            <div id="instructions2" v-if="instructionsStep == 2 && !isInLabSetup && !breathingDone && !noTime" class="instruction">
                 <div v-if="condition == 'A'">
                     You will be asked to sit quietly to meditate for 20 minutes while your heart rate is recorded. 
                     During this time, you will listen to a guided meditation (pre-recorded by a meditation expert) to help you focus on the sensations around the belly. 
@@ -65,7 +68,7 @@
     </div>
 </template>
 <script setup>
-    import { ref, onBeforeMount } from 'vue';
+    import { ref, onBeforeMount, onUnmounted } from 'vue';
     import EmoMemComponent from './EmoMemComponent.vue'
     import RestComponent from './RestComponent.vue'
     import UploadComponent from './UploadComponent.vue'
@@ -83,6 +86,9 @@
     const segsPerDay = ref(4)
     const sessionDuration = ref(1200)
     const condition = ref('')
+    const isInLabSetup = ref(true)
+
+    const isInLabSetupKey = 'isInLabSetup'
 
     onBeforeMount(async() => {
         await window.mainAPI.setStage(stage)
@@ -101,7 +107,26 @@
         condition.value = await getCondition()
         const sessionMinutes = sessionDuration.value / 60
         audioSrc.value = selectAudio(sessionMinutes, condition.value)
+
+        isInLabSetup.value = (await window.mainAPI.getKeyValue(isInLabSetupKey)) === null
+
+        window.addEventListener('keydown', handleKeydown)
     })
+
+    onUnmounted(() => {
+        window.removeEventListener('keydown', handleKeydown)
+    })
+
+    // CtrlOrCmd+Shift+E is the show emWave key combo (see background.js)
+    // When the experimenter hits this the in-lab-setup stuff is done
+    async function handleKeydown(e) {
+        if (e.code !== 'KeyE') return
+
+        if (e.shiftKey && (e.ctrlKey || e.metaKey)) {
+            window.mainAPI.setKeyValue(isInLabSetupKey, 'false')
+            isInLabSetup.value = false
+        }
+    }
 
     async function getCondition() {
         const session = await SessionStore.getRendererSession()
