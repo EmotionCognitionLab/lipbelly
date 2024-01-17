@@ -57,6 +57,7 @@ const EARNINGS_MENU_ID = 'earnings'
 const TRAINING_MENU_ID = 'training'
 const SURVEY_MENU_ID = 'survey'
 const LAB_VISIT_MENU_ID = 'lab-visit'
+const SHOW_EMWAVE_MENU_ID = 'show-emwave'
 
 function buildMenuTemplate(window) {
   const isMac = process.platform === 'darwin'
@@ -117,7 +118,8 @@ function buildMenuTemplate(window) {
         { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
         { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
         { label: 'Lab Visit 2 Survey', id: SURVEY_MENU_ID, click: () => showSurvey(window), visible: false, accelerator: 'CmdOrCtrl+Shift+S'},
-        { label: 'Lab Visit 2 Breathing', id: LAB_VISIT_MENU_ID, click: () => showLabVisit2(window), visible: false, accelerator: 'CmdOrCtrl+Shift+L'}
+        { label: 'Lab Visit 2 Breathing', id: LAB_VISIT_MENU_ID, click: () => showLabVisit2(window), visible: false, accelerator: 'CmdOrCtrl+Shift+L'},
+        { label: 'Show emWave', id: SHOW_EMWAVE_MENU_ID, click: () => showEmwave(window), visible: false, accelerator: 'CmdOrCtrl+Shift+E'}, // NB the same key sequence triggers the end of in-lab-setup in TrainingComponent.vue
       ]
     },
     // { role: 'windowMenu' }
@@ -158,6 +160,10 @@ function showSurvey(window) {
 function showLabVisit2(window) {
   const visit2Url = process.env.WEBPACK_DEV_SERVER_URL ? 'http://localhost:8080/#/visit2' : 'app://./index.html#/visit2'
   window.loadURL(visit2Url)
+}
+
+function showEmwave(window) {
+  console.debug('This is where we would make emwave visible');
 }
 
 // Quit when all windows are closed.
