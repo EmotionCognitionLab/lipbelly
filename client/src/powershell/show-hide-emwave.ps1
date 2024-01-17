@@ -1,6 +1,9 @@
+[CmdletBinding()]
 # Used to hide emwave
 param(
-    [string]$emwvProcId
+    [string]$emwvProcId,
+    [string]$winState,
+    [IntPtr]$mainWinHnd
 )
 
 # Function to maximize/minimize/hide etc. a given window
@@ -19,7 +22,7 @@ param(
     $ProcId,
     
     [Parameter()]
-    $MainWindowHandle = (Get-Process -id $ProcId).MainWindowHandle
+    $MainWindowHandle
 )
     $WindowStates = @{
         'FORCEMINIMIZE'   = 11
@@ -42,10 +45,13 @@ param(
     public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow); 
 "@ -name "Win32ShowWindowAsync" -namespace Win32Functions -passThru
     
+    if ($MainWindowHandle -eq '' -or $MainWindowHandle -eq $null) {
+        $MainWindowHandle = (Get-Process -id $ProcId).MainWindowHandle
+    }
     $Win32ShowWindowAsync::ShowWindowAsync($MainWindowHandle, $WindowStates[$Style]) | Out-Null
-    Write-Verbose ("Set Window Style '{1} on '{0}'" -f $MainWindowHandle, $Style)
+    Write-Verbose ("Set Window Style '{1}' on '{0}'" -f $MainWindowHandle, $Style)
 
 }
 
 # hide emWave
-Set-WindowStyle HIDE $emwvProcId
+Set-WindowStyle $winState $emwvProcId $mainWinHnd

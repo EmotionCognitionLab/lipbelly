@@ -10,6 +10,7 @@ const logger = new Logger(false);
 (async () => { await logger.init() })();
 
 let emWavePid = null;
+let emWaveMainWinHnd = null;
 const client = net.Socket();
 const artifactLimit = 60; // we alert if there are more than this many artifacts in 60s
 const artifactsToTrack = 120; // we get data every 500ms, so this holds 60s of data
@@ -161,10 +162,21 @@ export default {
         }
     },
 
-    async hideEmWave() {
-        const hideScript = process.env.NODE_ENV === 'production' ? path.join(path.dirname(app.getPath('exe')), 'hide-emwave.ps1') : path.join(app.getAppPath(), '../src/powershell/hide-emwave.ps1')
+    async showOrHideEmwave(showOrHide) {
+        const hideScript = process.env.NODE_ENV === 'production' ? path.join(path.dirname(app.getPath('exe')), 'show-hide-emwave.ps1') : path.join(app.getAppPath(), '../src/powershell/show-hide-emwave.ps1')
         if (process.platform === 'win32' && emWavePid) {
-            await spawn('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', [hideScript, emWavePid], {stdio:'inherit'});
+            const args = [hideScript, emWavePid, showOrHide];
+            if (emWaveMainWinHnd) {
+                args.push(emWaveMainWinHnd);
+            }
+            args.push('-verbose');
+            const hider = await spawn('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe', args);
+            hider.stdout.on('data', (data) => {
+                const match = data.toString().match(/.*on '([0-9]+)'/);
+                if (match) {
+                    emWaveMainWinHnd = match[1];
+                }
+            });
         }
     },
 
