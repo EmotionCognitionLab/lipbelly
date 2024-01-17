@@ -28,8 +28,8 @@ module.exports = {
         productName: "USC Mind-Body Study",
         extraFiles: [
           {
-            from: 'src/powershell/hide-emwave.ps1',
-            to: 'hide-emwave.ps1'
+            from: 'src/powershell/show-hide-emwave.ps1',
+            to: 'show-hide-emwave.ps1'
           }
       ],
       },

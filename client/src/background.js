@@ -57,6 +57,7 @@ const EARNINGS_MENU_ID = 'earnings'
 const TRAINING_MENU_ID = 'training'
 const SURVEY_MENU_ID = 'survey'
 const LAB_VISIT_MENU_ID = 'lab-visit'
+const SHOW_EMWAVE_MENU_ID = 'show-emwave'
 
 function buildMenuTemplate(window) {
   const isMac = process.platform === 'darwin'
@@ -117,7 +118,8 @@ function buildMenuTemplate(window) {
         { label: 'Earnings', id: EARNINGS_MENU_ID, click: () => window.webContents.send('show-earnings')},
         { label: 'Daily Training', id: TRAINING_MENU_ID, click: () => window.webContents.send('show-tasks')},
         { label: 'Lab Visit 2 Survey', id: SURVEY_MENU_ID, click: () => showSurvey(window), visible: false, accelerator: 'CmdOrCtrl+Shift+S'},
-        { label: 'Lab Visit 2 Breathing', id: LAB_VISIT_MENU_ID, click: () => showLabVisit2(window), visible: false, accelerator: 'CmdOrCtrl+Shift+L'}
+        { label: 'Lab Visit 2 Breathing', id: LAB_VISIT_MENU_ID, click: () => showLabVisit2(window), visible: false, accelerator: 'CmdOrCtrl+Shift+L'},
+        { label: 'Show emWave', id: SHOW_EMWAVE_MENU_ID, click: () => showEmwave(), visible: false, accelerator: 'CmdOrCtrl+Shift+E'}, // NB the same key sequence triggers the end of in-lab-setup in TrainingComponent.vue
       ]
     },
     // { role: 'windowMenu' }
@@ -160,6 +162,10 @@ function showLabVisit2(window) {
   window.loadURL(visit2Url)
 }
 
+function showEmwave() {
+  emwave.showOrHideEmwave('SHOW')
+}
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -198,7 +204,7 @@ app.on('ready', async () => {
     emwave.createClient(mainWin)
     mainWin.setFullScreen(true)
     mainWin.show()
-    emwave.hideEmWave()
+    emwave.showOrHideEmwave('HIDE')
 
   } catch (err) {
     console.error('Error starting emwave', err);
